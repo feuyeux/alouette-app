@@ -106,6 +106,11 @@ impl AndroidTTSEngine {
             return Err("Cannot synthesize empty text".to_string());
         }
 
+        // Validate text length
+        if text.len() > 4000 {
+            return Err("Text too long for TTS (max 4000 characters)".to_string());
+        }
+
         // Enhanced language to voice mapping for Android TTS with better fallbacks
         let (voice_name, locale, pitch, rate) = match language.to_lowercase().as_str() {
             "english" => ("en-US-default", "en-US", 1.0, 1.0),
@@ -136,10 +141,19 @@ impl AndroidTTSEngine {
             "pitch": pitch,
             "rate": rate,
             "volume": 0.9,
-            "timeout": 10000,
-            "fallback_locales": self.get_fallback_locales(locale)
+            "timeout": 20000, // Increased timeout for Android
+            "fallback_locales": self.get_fallback_locales(locale),
+            "retry_count": 3,
+            "use_queue": false,
+            "android_engine": "com.google.android.tts",
+            "android_specific": {
+                "force_defaults": true,
+                "check_voices": true,
+                "wait_for_ready": 500
+            }
         });
 
+        println!("Android TTS Debug - Generated TTS command successfully");
         Ok(tts_command.to_string())
     }
 

@@ -29,6 +29,34 @@ export const AVAILABLE_LANGUAGES = [
 ]
 
 /**
+ * Language name to 3-letter abbreviation mapping
+ */
+export const LANGUAGE_ABBREVIATIONS = {
+    'English': 'ENG',
+    'German': 'GER',
+    'French': 'FRA',
+    'Spanish': 'SPA',
+    'Italian': 'ITA',
+    'Russian': 'RUS',
+    'Greek': 'GRE',
+    'Hindi': 'HIN',
+    'Arabic': 'ARA',
+    'Chinese': 'CHN',
+    'Japanese': 'JPN',
+    'Korean': 'KOR',
+    'All': 'ALL'
+}
+
+/**
+ * Get 3-letter abbreviation for a language
+ * @param {string} languageName - Full language name
+ * @returns {string} 3-letter abbreviation
+ */
+export const getLanguageAbbreviation = (languageName) => {
+    return LANGUAGE_ABBREVIATIONS[languageName] || languageName.substring(0, 3).toUpperCase()
+}
+
+/**
  * Detect the language of input text using simple character analysis
  * @param {string} text - Text to analyze
  * @returns {string} Detected language name

@@ -1,0 +1,362 @@
+/* Alouette - Button Components */
+/* Modern button system inspired by Twitter and Duolingo */
+
+/* ========== Base button styles ========== */
+button {
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-bold);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);  /* Twitter's pill-shaped buttons */
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  outline: none;
+  box-sizing: border-box;
+  text-align: center;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  min-width: fit-content;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ========== Button sizes - Unified height based on settings button ========== */
+.btn-large {
+  height: 32px;
+  padding: 0 var(--spacing-3xl);
+  font-size: var(--font-size-lg);
+  min-width: 180px;
+  border-radius: var(--radius-full);
+}
+
+.btn-medium {
+  height: 32px;
+  padding: 0 var(--spacing-2xl);
+  font-size: var(--font-size-base);
+  min-width: 120px;
+  border-radius: var(--radius-full);
+}
+
+.btn-small {
+  height: 32px;
+  padding: 0 var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  min-width: 80px;
+  border-radius: var(--radius-full);
+}
+
+.btn-mini {
+  height: 32px;
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-xs);
+  min-width: 60px;
+  border-radius: var(--radius-full);
+}
+
+/* ========== Primary button - Twitter blue ========== */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========== Secondary button - Duolingo green ========== */
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  border-color: var(--color-secondary);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-secondary-dark);
+  border-color: var(--color-secondary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background-color: var(--color-secondary-dark);
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========== Outlined buttons - Twitter style ========== */
+.btn-outline-primary {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+  background-color: rgba(29, 161, 242, 0.1);
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.btn-outline-secondary {
+  background-color: transparent;
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-outline-secondary:hover:not(:disabled) {
+  background-color: rgba(88, 204, 2, 0.1);
+  color: var(--color-secondary-dark);
+  border-color: var(--color-secondary-dark);
+}
+
+/* ========== Ghost buttons - minimal style ========== */
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-gray-700);
+  border-color: transparent;
+  font-weight: var(--font-weight-medium);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--color-primary);
+}
+
+/* ========== Light button ========== */
+.btn-light {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border-color: var(--color-gray-200);
+  font-weight: var(--font-weight-medium);
+}
+
+.btn-light:hover:not(:disabled) {
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-800);
+}
+
+/* ========== Danger button ========== */
+.btn-danger {
+  background-color: var(--color-error);
+  color: var(--color-white);
+  border-color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--color-error-dark);
+  border-color: var(--color-error-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ========== Success button ========== */
+.btn-success {
+  background-color: var(--color-success);
+  color: var(--color-white);
+  border-color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: var(--color-success-dark);
+  border-color: var(--color-success-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ========== Warning button ========== */
+.btn-warning {
+  background-color: var(--color-warning);
+  color: var(--color-gray-800);
+  border-color: var(--color-warning);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-warning:hover:not(:disabled) {
+  background-color: var(--color-warning-dark);
+  border-color: var(--color-warning-dark);
+}
+
+/* ========== Info button ========== */
+.btn-info {
+  background-color: var(--color-info);
+  color: var(--color-white);
+  border-color: var(--color-info);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-info:hover:not(:disabled) {
+  background-color: var(--color-info-dark);
+  border-color: var(--color-info-dark);
+}
+
+/* ========== Icon buttons ========== */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-icon-only {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--radius-full);
+  min-width: auto;
+}
+
+.btn-icon-only.btn-small {
+  width: 32px;
+  height: 32px;
+}
+
+.btn-icon-only.btn-mini {
+  width: 32px;
+  height: 32px;
+}
+
+/* ========== Button groups - Twitter style ========== */
+.btn-group {
+  display: inline-flex;
+  gap: var(--spacing-sm);
+}
+
+.btn-group-tight {
+  display: inline-flex;
+  gap: var(--spacing-xs);
+}
+
+.btn-group-vertical {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* ========== Block button ========== */
+.btn-block {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ========== Loading state ========== */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: btn-spin 1s linear infinite;
+  color: var(--color-white);
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========== Playing state for audio buttons ========== */
+.btn-playing {
+  background-color: var(--color-success) !important;
+  border-color: var(--color-success) !important;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(23, 191, 99, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(23, 191, 99, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(23, 191, 99, 0);
+  }
+}
+
+/* ========== Special button styles ========== */
+.translate-btn {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  min-width: 200px;
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+}
+
+.translate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2xl);
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+}
+
+.translate-btn:disabled {
+  background: var(--color-gray-400);
+  color: var(--color-gray-600);
+  box-shadow: none;
+  transform: none;
+}
+
+/* ========== Focus states ========== */
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ========== Responsive design ========== */
+@media (max-width: 768px) {
+  .btn-large {
+    height: 32px;
+    font-size: var(--font-size-base);
+    padding: 0 var(--spacing-2xl);
+    min-width: 140px;
+  }
+  
+  .btn-medium {
+    height: 32px;
+    font-size: var(--font-size-sm);
+    padding: 0 var(--spacing-lg);
+    min-width: 100px;
+  }
+  
+  .btn-small {
+    height: 32px;
+    font-size: var(--font-size-xs);
+    padding: 0 var(--spacing-md);
+    min-width: 70px;
+  }
+}

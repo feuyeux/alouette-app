@@ -151,18 +151,43 @@ English, Chinese, Japanese, Korean, French, German, Spanish, Italian, Russian, A
 ## 📦 Build Commands
 
 ```bash
-npm run dev              # Development mode
-npm run build            # Production build
-npm run tauri android build    # Android APK (uses global Gradle config)
-npm run tauri ios build        # iOS app (macOS only)
+# Desktop Development
+npm run dev                    # Development mode
+npm run build                  # Production build
+
+# Android Development (ARM64 Optimized - macOS)
+bash scripts/macos/quick-start.sh    # Complete ARM64 setup and build
+bash scripts/macos/android-build.sh  # ARM64-specific build and deploy
+
+# Utility Scripts
+bash scripts/macos/view-logs.sh      # View Android app logs
+bash scripts/macos/clean-android.sh  # Clean ARM64 build artifacts
+
+# Manual Commands (if needed)
+npm run tauri android init        # Initialize Android project
+npm run tauri android build --debug   # Build debug APK
+npm run tauri ios build          # iOS app (macOS only)
 ```
 
-### Global Configuration
+### Android Development Workflow (ARM64 Focus)
 
-This project uses optimized global configurations for better performance:
+1. **First-time Setup**:
+   ```bash
+   # Setup Android environment (see alouette-guide-macos.md)
+   cd ~/zoo && source android-env.sh
+   ```
 
-- **Gradle**: Global config in `~/.gradle/` with China mirrors and performance optimizations
-- **No Local Scripts**: All build scripts have been removed in favor of standard Tauri commands
+2. **Regular Development**:
+   ```bash
+   # Build and deploy ARM64 debug version (optimized)
+   bash scripts/macos/android-build.sh
+   
+   # Or use quick-start for complete pipeline
+   bash scripts/macos/quick-start.sh
+   
+   # View app logs
+   bash scripts/macos/view-logs.sh
+   ```
 
 ## Demo
 
@@ -181,74 +206,51 @@ This project uses optimized global configurations for better performance:
 
 ### Prerequisites
 
-Ensure your project directory contains a complete Android SDK setup. The project uses global Gradle configuration for optimal performance.
+For macOS users, follow the complete setup guide in `alouette-guide-macos.md`:
+- Android SDK and NDK installation in `~/zoo`
+- Environment variables configuration
+- ARM64 emulator setup
+
+### Quick Start
 
 ```bash
-# Set Android environment variables
-export ANDROID_HOME=/home/hanl5/coding/alouette/android-sdk
-export ANDROID_SDK_ROOT=$ANDROID_HOME
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin
+# 1. Setup Android environment (first time only)
+cd ~/zoo && source android-env.sh
+
+# 2. Build and deploy debug APK (no signing required)
+bash scripts/android-build.sh
+
+# 3. View logs
+bash scripts/view-logs.sh
 ```
 
-### Build with Tauri
+### Available Scripts (macOS ARM64 Focus)
 
-The project now uses standard Tauri commands with global Gradle optimization:
+| Script | Purpose | Target |
+|--------|---------|---------|
+| `scripts/macos/quick-start.sh` | Complete ARM64 setup and build pipeline | ARM64 |
+| `scripts/macos/android-build.sh` | Builds and deploys ARM64 debug APK | ARM64 |
+| `scripts/macos/status-check.sh` | Check project and environment status | All |
+| `scripts/macos/view-logs.sh` | Views filtered Android app logs | All |
+| `scripts/macos/clean-android.sh` | Cleans ARM64 build artifacts | ARM64 |
 
-```bash
-# Build debug version (recommended for development)
-npm run tauri android build -- --debug
-
-# Build release version (requires signing setup)
-npm run tauri android build
-```
-
-**Benefits of Global Configuration:**
-- ✅ Faster builds with China mirrors
-- ✅ Optimized memory usage and parallel builds
-- ✅ Consistent configuration across projects
-- ✅ No local Gradle files to maintain
-
----
-
-## 📋 Project Structure
-
-This project maintains a clean structure with minimal configuration files:
-- All build scripts have been replaced with standard Tauri commands
-- Global Gradle configuration provides optimal build performance
-- No redundant local configuration files
-
-### Launch Android Emulator & Deploy
+### Manual Build Process
 
 ```bash
-# Start emulator in background
-android-sdk/emulator/emulator -avd test_avd -no-snapshot-save &
+# Load Android environment
+cd ~/zoo && source android-env.sh && cd /Users/han/coding/alouette-app
 
-# Wait for emulator to fully boot, then check device connection
-adb devices
-```
+# Build debug APK (no signing required)
+npm run tauri android build --debug
 
-### Deploy & Verify
-
-```bash
-# 1. Confirm emulator is connected
-adb devices
-
-# 2. Install APK to emulator
-adb install src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
-
-# 3. Launch the application
+# Deploy
+adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
 adb shell am start -n com.alouette.app/com.alouette.app.MainActivity
-
-# 4. Verify app process is running
-adb shell ps | grep alouette
-
-# 5. Check app logs for troubleshooting (optional)
-adb logcat | grep -i "alouette\|rust\|tauri"
 ```
 
----
-
-## 📋 Configuration Files
-
-- All build scripts have been replaced with standard Tauri commands for better maintainability
+**Benefits of Debug Workflow:**
+- ✅ No signing configuration needed
+- ✅ Fast development iteration
+- ✅ Automatic debug certificates
+- ✅ Simple build process
+- ✅ Direct device deployment

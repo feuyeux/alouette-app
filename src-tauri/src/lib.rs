@@ -5,8 +5,7 @@ mod common;
 mod tts;
 mod ollama;
 mod lm_studio;
-#[cfg(target_os = "android")]
-mod android_tts;
+mod edge_tts;
 
 use tts::TTSEngine;
 use ollama::{call_ollama_translate, connect_ollama_internal};
@@ -180,7 +179,7 @@ async fn play_tts_with_settings(
 async fn get_edge_tts_voices() -> Result<HashMap<String, Vec<String>>, String> {
     println!("Fetching available TTS voices");
     let tts_engine = TTSEngine::new();
-    let voices = tts_engine.get_voices_by_language();
+    let voices = tts_engine.get_voices_by_language().await;
     println!("Found {} language groups with voices", voices.len());
     Ok(voices)
 }
@@ -193,41 +192,17 @@ async fn get_edge_tts_voices() -> Result<HashMap<String, Vec<String>>, String> {
 async fn test_android_tts(text: String, language: String) -> Result<String, String> {
     println!("Testing Android TTS - Text: '{}', Language: '{}'", text, language);
     
-    #[cfg(target_os = "android")]
-    {
-        use crate::android_tts::AndroidTTSEngine;
-        let android_tts = AndroidTTSEngine::new();
-        
-        match android_tts.synthesize_speech(&text, &language).await {
-            Ok(command) => {
-                println!("✅ Android TTS test command generated successfully");
-                return Ok(format!("ANDROID_TTS_COMMAND:{}", command));
-            }
-            Err(e) => {
-                println!("❌ Android TTS test failed: {}", e);
-                return Err(format!("Android TTS test failed: {}", e));
-            }
+    // Use unified TTS engine for all platforms
+    let tts_engine = TTSEngine::new();
+    match tts_engine.play_tts(&text, &language).await {
+        Ok(()) => {
+            println!("✅ Unified TTS test successful");
+            Ok("TTS test completed successfully".to_string())
         }
-    }
-    
-    #[cfg(not(target_os = "android"))]
-    {
-        println!("ℹ️ Android TTS test requested on non-Android platform");
-        // For testing on non-Android platforms, simulate Android TTS command
-        let tts_command = serde_json::json!({
-            "type": "android_tts_command",
-            "text": text,
-            "voice": "en-US-default",
-            "locale": "en-US",
-            "language": language,
-            "pitch": 1.0,
-            "rate": 1.0,
-            "volume": 0.9,
-            "timeout": 10000,
-            "fallback_locales": ["en-US", "en-GB"]
-        });
-        
-        Ok(format!("ANDROID_TTS_COMMAND:{}", tts_command.to_string()))
+        Err(e) => {
+            println!("❌ Unified TTS test failed: {}", e);
+            Err(format!("TTS test failed: {}", e))
+        }
     }
 }
 
@@ -243,46 +218,9 @@ async fn test_android_tts(text: String, language: String) -> Result<String, Stri
 async fn play_android_tts_native(text: String, locale: String) -> Result<(), String> {
     println!("Native Android TTS request - Text: '{}', Locale: '{}'", text, locale);
     
-    #[cfg(target_os = "android")]
-    {
-        // On Android, try to use the system TTS
-        use std::process::Command;
-        
-        // Android systems often have TTS via accessibility services or espeak
-        // First try the most common Android TTS approach
-        let tts_result = Command::new("am")
-            .args(&[
-                "start",
-                "-a", "android.intent.action.TTS_SERVICE",
-                "--es", "android.speech.tts.engine.EXTRA_UTTERANCE_ID", "alouette_tts",
-                "--es", "android.speech.tts.engine.EXTRA_TEXT", &text,
-                "--es", "android.speech.tts.engine.EXTRA_LOCALE", &locale
-            ])
-            .output();
-            
-        match tts_result {
-            Ok(output) => {
-                if output.status.success() {
-                    println!("Android TTS command executed successfully");
-                    Ok(())
-                } else {
-                    let error_msg = String::from_utf8_lossy(&output.stderr);
-                    println!("Android TTS command failed: {}", error_msg);
-                    Err(format!("Android TTS failed: {}", error_msg))
-                }
-            }
-            Err(e) => {
-                println!("Failed to execute Android TTS command: {}", e);
-                Err(format!("Could not execute Android TTS: {}", e))
-            }
-        }
-    }
-    
-    #[cfg(not(target_os = "android"))]
-    {
-        // On non-Android platforms, return an informative error
-        Err("Native Android TTS is only available on Android devices".to_string())
-    }
+    // Use unified TTS engine for all platforms
+    let tts_engine = TTSEngine::new();
+    tts_engine.play_tts(&text, &locale).await
 }
 
 // ================================
@@ -459,6 +397,196 @@ fn greet(name: &str) -> String {
 // Debug Commands
 // ================================
 
+/**
+ * Diagnose TTS capabilities and provide troubleshooting info
+ * Updated to reflect Rust-only TTS implementation
+ */
+#[tauri::command]
+async fn diagnose_android_tts() -> Result<serde_json::Value, String> {
+    println!("Running TTS diagnostics for Rust-based implementation...");
+    
+    let mut diagnostics = serde_json::json!({
+        "platform": std::env::consts::OS,
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+        "tts_implementation": "rust_unified",
+        "tests": {}
+    });
+    
+    // Test 1: Check edge-tts availability
+    println!("Testing edge-tts availability...");
+    let edge_tts_check = std::process::Command::new("edge-tts")
+        .arg("--version")
+        .output();
+        
+    let edge_tts_available = match edge_tts_check {
+        Ok(output) => {
+            let version_output = String::from_utf8_lossy(&output.stdout);
+            if output.status.success() && !version_output.trim().is_empty() {
+                diagnostics["tests"]["edge_tts"] = serde_json::json!({
+                    "available": true,
+                    "version": version_output.trim(),
+                    "status": "Preferred TTS engine available"
+                });
+                true
+            } else {
+                diagnostics["tests"]["edge_tts"] = serde_json::json!({
+                    "available": false,
+                    "error": "edge-tts command not working",
+                    "output": version_output.trim()
+                });
+                false
+            }
+        }
+        Err(e) => {
+            diagnostics["tests"]["edge_tts"] = serde_json::json!({
+                "available": false,
+                "error": format!("edge-tts not found: {}", e),
+                "command": "edge-tts --version"
+            });
+            false
+        }
+    };
+    
+    // Test 2: Check platform-specific TTS engines
+    #[cfg(target_os = "android")]
+    {
+        // Check for termux-tts
+        let termux_tts_check = std::process::Command::new("termux-tts-speak")
+            .arg("--help")
+            .output();
+            
+        match termux_tts_check {
+            Ok(output) => {
+                diagnostics["tests"]["termux_tts"] = serde_json::json!({
+                    "available": output.status.success(),
+                    "type": "android_termux"
+                });
+            }
+            Err(_) => {
+                diagnostics["tests"]["termux_tts"] = serde_json::json!({
+                    "available": false,
+                    "type": "android_termux"
+                });
+            }
+        }
+        
+        // Check for espeak-ng
+        let espeak_check = std::process::Command::new("espeak-ng")
+            .arg("--version")
+            .output();
+            
+        match espeak_check {
+            Ok(output) => {
+                diagnostics["tests"]["espeak_ng"] = serde_json::json!({
+                    "available": output.status.success(),
+                    "version": String::from_utf8_lossy(&output.stdout).trim()
+                });
+            }
+            Err(_) => {
+                diagnostics["tests"]["espeak_ng"] = serde_json::json!({
+                    "available": false,
+                    "recommendation": "Install espeak-ng as fallback"
+                });
+            }
+        }
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        // macOS has built-in 'say' command
+        let say_check = std::process::Command::new("say")
+            .arg("--version")
+            .output();
+            
+        diagnostics["tests"]["macos_say"] = serde_json::json!({
+            "available": say_check.is_ok(),
+            "type": "system_tts"
+        });
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        // Windows PowerShell TTS
+        diagnostics["tests"]["windows_powershell"] = serde_json::json!({
+            "available": true,
+            "type": "system_tts",
+            "method": "powershell_sapi"
+        });
+    }
+    
+    // Test 3: Check audio output capability (rodio)
+    println!("Testing audio output capability...");
+    #[cfg(not(target_os = "android"))]
+    {
+        use rodio::OutputStream;
+        let audio_test = OutputStream::try_default();
+        diagnostics["tests"]["audio_output"] = serde_json::json!({
+            "available": audio_test.is_ok(),
+            "library": "rodio",
+            "error": if audio_test.is_err() { 
+                format!("{}", audio_test.err().unwrap()) 
+            } else { 
+                "none".to_string() 
+            }
+        });
+    }
+    
+    #[cfg(target_os = "android")]
+    {
+        // On Android, audio is handled differently
+        diagnostics["tests"]["audio_output"] = serde_json::json!({
+            "available": true,
+            "library": "android_system",
+            "note": "Audio handled by Android system"
+        });
+    }
+    
+    // Generate recommendations based on test results
+    let mut recommendations = Vec::new();
+    
+    if !edge_tts_available {
+        #[cfg(target_os = "android")]
+        {
+            recommendations.push("Install Termux and run: pkg install python; pip install edge-tts".to_string());
+            recommendations.push("Alternative: pkg install espeak-ng for offline TTS".to_string());
+        }
+        
+        #[cfg(not(target_os = "android"))]
+        {
+            recommendations.push("Install edge-tts: pip install edge-tts".to_string());
+        }
+    }
+    
+    if edge_tts_available {
+        recommendations.push("✅ Primary TTS engine (edge-tts) is available".to_string());
+        recommendations.push("🌐 Ensure internet connection for best voice quality".to_string());
+    }
+    
+    #[cfg(target_os = "android")]
+    {
+        if !diagnostics["tests"]["termux_tts"]["available"].as_bool().unwrap_or(false) 
+            && !diagnostics["tests"]["espeak_ng"]["available"].as_bool().unwrap_or(false) {
+            recommendations.push("⚠️ No fallback TTS engines available - install espeak-ng or termux-tts".to_string());
+        }
+    }
+    
+    diagnostics["recommendations"] = serde_json::json!(recommendations);
+    
+    // Summary
+    let tts_engines_available = edge_tts_available || 
+        diagnostics["tests"].as_object().unwrap().values()
+            .any(|test| test["available"].as_bool().unwrap_or(false));
+            
+    diagnostics["summary"] = serde_json::json!({
+        "tts_functional": tts_engines_available,
+        "primary_engine": if edge_tts_available { "edge-tts" } else { "platform_specific" },
+        "fallback_available": diagnostics["tests"].as_object().unwrap().len() > 1
+    });
+    
+    println!("TTS diagnostics completed");
+    Ok(diagnostics)
+}
+
 // ================================
 // Application Entry Point
 // ================================
@@ -485,6 +613,7 @@ pub fn run() {
             get_edge_tts_voices,
             play_android_tts_native,
             test_android_tts,
+            diagnose_android_tts,
             
             // Cache management
             clear_tts_cache,

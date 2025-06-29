@@ -1,0 +1,266 @@
+/* Alouette - Main Stylesheet */
+/* Modern, clean design inspired by Twitter and Duolingo */
+
+/* ========== Import all style modules ========== */
+@import './variables.css';    /* CSS variables and design tokens */
+@import './base.css';         /* Base styles and reset */
+@import './buttons.css';      /* Button component styles */
+@import './forms.css';        /* Form component styles */
+@import './layout.css';       /* Layout component styles */
+@import './components.css';   /* App-specific component styles */
+
+/* ========== Theme overrides and app-specific styles ========== */
+
+/* Application root container */
+#app {
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--color-gray-700);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Vue transition animations */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-normal);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all var(--transition-normal);
+}
+
+.slide-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* Scale animation for modals */
+.scale-enter-active,
+.scale-leave-active {
+  transition: all var(--transition-normal);
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+/* ========== Utility classes ========== */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-light) 100%);
+}
+
+.shadow-subtle {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-medium {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-large {
+  box-shadow: var(--shadow-lg);
+}
+
+.border-subtle {
+  border: 1px solid var(--border-light);
+}
+
+.border-medium {
+  border: 1px solid var(--border-medium);
+}
+
+/* ========== Smooth scrolling ========== */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* ========== Focus enhancements ========== */
+.focus-visible:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ========== Print styles ========== */
+@media print {
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+  
+  header,
+  .llm-status-bar,
+  .status-bar,
+  button,
+  .btn {
+    display: none !important;
+  }
+  
+  .main-content {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  
+  .translation-row {
+    break-inside: avoid;
+    border: 1px solid #ccc !important;
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* ========== High contrast mode support ========== */
+@media (prefers-contrast: high) {
+  :root {
+    --border-light: #000;
+    --border-medium: #000;
+    --border-dark: #000;
+    --color-gray-400: #000;
+    --color-gray-500: #000;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    border: 2px solid #000;
+  }
+}
+
+/* ========== Reduced motion support ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .btn-playing {
+    animation: none;
+  }
+}
+
+/* ========== Dark mode support (future) ========== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-main: #000000;
+    --bg-card: #15202B;
+    --bg-secondary: #192734;
+    --bg-hover: rgba(29, 161, 242, 0.1);
+    --color-gray-50: #192734;
+    --color-gray-100: #25363D;
+    --color-gray-200: #2F3336;
+    --color-gray-300: #536471;
+    --color-gray-400: #6E767D;
+    --color-gray-500: #8B98A5;
+    --color-gray-600: #ABABAB;
+    --color-gray-700: #E7E9EA;
+    --color-white: #FFFFFF;
+    --border-light: #2F3336;
+    --border-medium: #536471;
+  }
+}
+
+/* ========== App-specific global styles ========== */
+
+/* Ensure all text has good contrast */
+::placeholder {
+  color: var(--color-gray-400);
+  opacity: 1;
+}
+
+/* Enhanced text selection */
+::selection {
+  background: var(--color-primary);
+  color: var(--color-white);
+  text-shadow: none;
+}
+
+/* Enhanced link styles */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary-dark);
+}
+
+/* Code block enhancements */
+pre code {
+  color: var(--color-gray-700);
+}
+
+/* Table styles (if needed) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--spacing-xl);
+}
+
+th,
+td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+th {
+  background: var(--color-gray-50);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-gray-700);
+}
+
+/* Ensure images and icons are responsive */
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Enhanced tooltip styles */
+[title] {
+  cursor: help;
+  border-bottom: 1px dotted var(--color-gray-400);
+}
+
+/* Final ensure all interactive elements have proper focus styles */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

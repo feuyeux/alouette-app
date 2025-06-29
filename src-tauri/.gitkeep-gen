@@ -1,0 +1,7 @@
+# Files and directories to preserve during Tauri builds
+# This prevents regeneration issues with Android builds
+
+# Essential Android build files
+gen/android/**
+target/**/libalouette_lib.so
+keystore/**
