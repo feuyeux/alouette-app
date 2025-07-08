@@ -846,7 +846,6 @@ impl TTSEngine {
             .args(&[
                 "-v", voice,
                 "-o", &temp_file,
-                "-f", "wav",
                 text
             ])
             .output()
