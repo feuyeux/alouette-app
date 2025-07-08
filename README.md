@@ -2,7 +2,7 @@
 
 A cross-platform translation and text-to-speech application built with **Tauri v2 + Vue 3 + Rust**, supporting remote Ollama AI servers for high-quality multilingual translation and intelligent speech synthesis.
 
-![Alouette Logo](src/assets/alouette_circle_small.png)
+![Alouette Logo](src/assets/alouette_small.png)
 
 ## 🚀 Environment Setup & Installation
 
