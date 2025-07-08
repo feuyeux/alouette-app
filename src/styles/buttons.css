@@ -193,15 +193,18 @@ button:disabled {
 
 /* ========== Warning button ========== */
 .btn-warning {
-  background-color: var(--color-warning);
-  color: var(--color-gray-800);
-  border-color: var(--color-warning);
-  font-weight: var(--font-weight-bold);
+  background: var(--color-warning-background) !important;
+  color: var(--color-warning-text) !important;
+  border-color: var(--color-warning-border) !important;
 }
 
-.btn-warning:hover:not(:disabled) {
-  background-color: var(--color-warning-dark);
-  border-color: var(--color-warning-dark);
+.btn-warning:hover {
+  background: var(--color-warning-hover) !important;
+  border-color: var(--color-warning-border-hover) !important;
+}
+
+.btn-warning:active {
+  background: var(--color-warning-active) !important;
 }
 
 /* ========== Info button ========== */

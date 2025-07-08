@@ -126,6 +126,14 @@
   --z-toast: 1080;
 }
 
+/* ========== Warning Color Variants ========== */
+  --color-warning-background: var(--color-warning);
+  --color-warning-text: var(--color-gray-700);
+  --color-warning-border: var(--color-warning-dark);
+  --color-warning-hover: var(--color-warning-light);
+  --color-warning-border-hover: var(--color-warning);
+  --color-warning-active: var(--color-warning-dark);
+
 /* ========== Dark Mode Support (Future) ========== */
 @media (prefers-color-scheme: dark) {
   :root {
@@ -134,14 +142,6 @@
     --bg-card: rgba(45, 45, 45, 0.95);
     --color-gray-50: #2D2D2D;
     --color-gray-100: #3A3A3A;
-    --color-gray-200: #4A4A4A;
-  }
-}
-
-/* ========== 无障碍访问 ========== */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --transition-fast: 0s;
     --transition-normal: 0s;
     --transition-slow: 0s;
     --transition-bounce: 0s;

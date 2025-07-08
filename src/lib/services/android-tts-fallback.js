@@ -203,43 +203,6 @@ export class AndroidTTSFallback {
     }
 
     /**
-     * Get diagnostic information about TTS capabilities
-     * @returns {Object} Diagnostic information
-     */
-    getDiagnostics() {
-        const diagnostics = {
-            web_speech_api: {
-                available: this.isAvailable,
-                functional: this.isWebSpeechAvailable(),
-                voice_count: this.supportedVoices.length,
-                supported_languages: []
-            },
-            platform: navigator.userAgent.includes('Android') ? 'android' : 'unknown',
-            timestamp: new Date().toISOString()
-        }
-
-        // Extract supported languages
-        if (this.supportedVoices.length > 0) {
-            const languages = new Set()
-            this.supportedVoices.forEach(voice => {
-                const lang = voice.lang.split('-')[0]
-                languages.add(lang)
-            })
-            diagnostics.web_speech_api.supported_languages = Array.from(languages)
-        }
-
-        // Add voice details
-        diagnostics.web_speech_api.voices = this.supportedVoices.map(voice => ({
-            name: voice.name,
-            lang: voice.lang,
-            localService: voice.localService,
-            default: voice.default
-        }))
-
-        return diagnostics
-    }
-
-    /**
      * Stop any ongoing speech
      */
     stop() {

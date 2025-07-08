@@ -266,6 +266,21 @@ header h1,
   flex-direction: column;
 }
 
+/* TTS Controls Grid Layout */
+.tts-controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+  .tts-controls-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+}
+
 /* Settings Header with Controls */
 .settings-header {
   display: flex;
@@ -664,15 +679,31 @@ header h1,
   resize: vertical;
   font-family: var(--font-family-primary);
   transition: all var(--transition-normal);
-  background: var(--bg-card);
+  background: var(--color-white);
   box-shadow: var(--shadow-sm);
+  color: #000000;
+  opacity: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .translation-input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1), var(--shadow-md);
-  transform: translateY(-1px);
+  background: var(--color-white);
+  color: #000000;
+  opacity: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .translate-action {
@@ -924,14 +955,6 @@ header h1,
 
 /* ========== Enhanced User Experience Styles ========== */
 
-/* Focus indicators for accessibility */
-.translation-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1), var(--shadow-md);
-  transform: translateY(-1px);
-}
-
 /* Language option animations */
 .language-option {
   transition: all var(--transition-normal);
@@ -948,12 +971,14 @@ header h1,
 
 /* Loading state for translation section */
 .translation-section.loading {
-  opacity: 0.7;
   pointer-events: none;
 }
 
 .translation-section.loading .translation-input {
-  background: var(--bg-disabled);
+  background: var(--color-white);
+  opacity: 1;
+  color: #000000;
+  border-color: var(--border-medium);
 }
 
 /* Empty state styling */

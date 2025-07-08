@@ -109,31 +109,4 @@ export class TTSService {
         this.isPlayingAll = false
         console.log('🛑 TTS playback stopped')
     }
-
-    /**
-     * Diagnose TTS issues and provide troubleshooting information
-     * @returns {Promise<Object>} Diagnostic information
-     */
-    async diagnoseAndroidTTS() {
-        if (!isTauriEnv()) {
-            return {
-                platform: 'browser',
-                message: 'TTS diagnostics only available in Tauri environment'
-            }
-        }
-
-        try {
-            console.log('🔍 Running TTS diagnostics...')
-            const diagnostics = await invoke('diagnose_android_tts')
-            console.log('TTS Diagnostics:', diagnostics)
-            return diagnostics
-        } catch (error) {
-            console.error('Failed to run TTS diagnostics:', error)
-            return {
-                error: error.message || error,
-                platform: 'unknown',
-                message: 'Failed to run diagnostics'
-            }
-        }
-    }
 }

@@ -829,18 +829,105 @@ impl TTSEngine {
         // Create temporary file for audio output
         let temp_file = format!("/tmp/tts_macos_{}.aiff", std::process::id());
         
-        // Map locale to macOS voice
+        // Improved locale to macOS voice mapping
         let voice = match locale {
-            "en-US" => "Alex",
+            // English
+            "en-US" | "English" => "Alex",
             "en-GB" => "Daniel",
-            "es-ES" => "Monica",
-            "fr-FR" => "Thomas",
-            "de-DE" => "Anna",
-            "it-IT" => "Alice",
-            "ja-JP" => "Kyoko",
-            "zh-CN" => "Ting-Ting",
-            _ => "Alex", // Default to Alex for English
+            "en-AU" => "Karen",
+            
+            // Spanish  
+            "es-ES" | "Spanish" => "Monica",
+            "es-MX" => "Paulina",
+            
+            // French
+            "fr-FR" | "French" => "Thomas",
+            "fr-CA" => "Amelie",
+            
+            // German
+            "de-DE" | "German" => "Anna",
+            
+            // Italian
+            "it-IT" | "Italian" => "Alice",
+            
+            // Japanese
+            "ja-JP" | "Japanese" => "Kyoko",
+            
+            // Chinese
+            "zh-CN" | "Chinese" => "Ting-Ting",
+            "zh-TW" => "Mei-Jia",
+            "zh-HK" => "Sin-ji",
+            
+            // Portuguese
+            "pt-BR" => "Luciana",
+            "pt-PT" => "Joana",
+            
+            // Russian
+            "ru-RU" | "Russian" => "Milena",
+            
+            // Korean
+            "ko-KR" | "Korean" => "Yuna",
+            
+            // Dutch
+            "nl-NL" => "Ellen",
+            "nl-BE" => "Ellen",
+            
+            // Polish
+            "pl-PL" => "Zosia",
+            
+            // Swedish
+            "sv-SE" => "Alva",
+            
+            // Norwegian
+            "nb-NO" => "Nora",
+            
+            // Danish
+            "da-DK" => "Sara",
+            
+            // Finnish
+            "fi-FI" => "Satu",
+            
+            // Czech
+            "cs-CZ" => "Zuzana",
+            
+            // Hungarian
+            "hu-HU" => "Mariska",
+            
+            // Romanian
+            "ro-RO" => "Ioana",
+            
+            // Slovak
+            "sk-SK" => "Laura",
+            
+            // Croatian
+            "hr-HR" => "Lana",
+            
+            // Arabic
+            "ar-SA" | "Arabic" => "Maged",
+            
+            // Hindi
+            "hi-IN" | "Hindi" => "Lekha",
+            
+            // Thai
+            "th-TH" => "Kanya",
+            
+            // Turkish
+            "tr-TR" => "Yelda",
+            
+            // Greek
+            "el-GR" | "Greek" => "Melina",
+            
+            // Hebrew
+            "he-IL" => "Carmit",
+            
+            // Default to Alex for unknown languages/locales
+            _ => {
+                println!("⚠️ Unknown locale '{}', using default English voice 'Alex'", locale);
+                "Alex"
+            }
         };
+        
+        println!("🍎 macOS TTS: Using voice '{}' for locale '{}'", voice, locale);
         
         let result = tokio::process::Command::new("say")
             .args(&[
@@ -858,13 +945,22 @@ impl TTSEngine {
                     if let Ok(audio_data) = tokio::fs::read(&temp_file).await {
                         // Clean up temp file
                         let _ = tokio::fs::remove_file(&temp_file).await;
+                        println!("✅ macOS TTS synthesis successful: {} bytes", audio_data.len());
                         return Ok(audio_data);
+                    } else {
+                        let _ = tokio::fs::remove_file(&temp_file).await;
+                        return Err("Failed to read generated audio file".to_string());
                     }
+                } else {
+                    let error_msg = String::from_utf8_lossy(&output.stderr);
+                    let _ = tokio::fs::remove_file(&temp_file).await;
+                    return Err(format!("macOS say command failed: {}", error_msg));
                 }
-                let error_msg = String::from_utf8_lossy(&output.stderr);
-                Err(format!("macOS say command failed: {}", error_msg))
             }
-            Err(e) => Err(format!("Failed to execute macOS say command: {}", e))
+            Err(e) => {
+                let _ = tokio::fs::remove_file(&temp_file).await;
+                return Err(format!("Failed to execute macOS say command: {}", e));
+            }
         }
     }
 

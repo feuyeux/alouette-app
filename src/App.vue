@@ -117,52 +117,50 @@
           <div class="settings-section">
             <h4>🔊 Text-to-Speech Settings</h4>
 
-            <div class="setting-group">
-              <label>Speech Rate:</label>
-              <div class="range-setting">
-                <input
-                  v-model="ttsSettings.rate"
-                  type="range"
-                  min="0.1"
-                  max="2"
-                  step="0.1"
-                  class="range-input"
-                />
-                <span class="range-value">{{ ttsSettings.rate }}x</span>
+            <div class="tts-controls-grid">
+              <div class="setting-group">
+                <label>Rate:</label>
+                <div class="range-setting">
+                  <input
+                    v-model="ttsSettings.rate"
+                    type="range"
+                    min="0.1"
+                    max="2"
+                    step="0.1"
+                    class="range-input"
+                  />
+                  <span class="range-value">{{ ttsSettings.rate }}x</span>
+                </div>
               </div>
-            </div>
 
-            <div class="setting-group">
-              <label>Volume:</label>
-              <div class="range-setting">
-                <input
-                  v-model="ttsSettings.volume"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  class="range-input"
-                />
-                <span class="range-value"
-                  >{{ Math.round(ttsSettings.volume * 100) }}%</span
-                >
+              <div class="setting-group">
+                <label>Volume:</label>
+                <div class="range-setting">
+                  <input
+                    v-model="ttsSettings.volume"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    class="range-input"
+                  />
+                  <span class="range-value">{{ Math.round(ttsSettings.volume * 100) }}%</span>
+                </div>
               </div>
-            </div>
 
-            <div class="setting-group">
-              <label>Pause Between Languages:</label>
-              <div class="range-setting">
-                <input
-                  v-model="ttsSettings.pauseBetweenLanguages"
-                  type="range"
-                  min="0"
-                  max="2000"
-                  step="100"
-                  class="range-input"
-                />
-                <span class="range-value"
-                  >{{ ttsSettings.pauseBetweenLanguages }}ms</span
-                >
+              <div class="setting-group">
+                <label>Pause:</label>
+                <div class="range-setting">
+                  <input
+                    v-model="ttsSettings.pauseBetweenLanguages"
+                    type="range"
+                    min="0"
+                    max="2000"
+                    step="100"
+                    class="range-input"
+                  />
+                  <span class="range-value">{{ ttsSettings.pauseBetweenLanguages }}ms</span>
+                </div>
               </div>
             </div>
 
@@ -175,10 +173,6 @@
                 />
                 Auto-select matching voice
               </label>
-              <small
-                >Attempt to automatically select appropriate voice for each
-                language</small
-              >
             </div>
 
             <div class="setting-group">
@@ -189,30 +183,16 @@
               >
                 {{ isTesting ? "Testing..." : "Test Speech" }}
               </button>
-              <button
-                @click="diagnoseAndroidTTS"
-                class="btn-info btn-medium"
-                :disabled="isDiagnosing"
-                style="margin-left: 10px;"
-              >
-                {{ isDiagnosing ? "Diagnosing..." : "🔍 Android TTS Diagnostics" }}
-              </button>
             </div>
           </div>
 
           <!-- TTS Cache Management -->
           <div class="settings-section">
-            <h4>💾 Voice Cache Management</h4>
+            <h4>💾 Cache Management</h4>
 
             <div class="setting-group">
               <div class="cache-info" v-if="cacheInfo">
-                <p>📊 Cache Statistics:</p>
-                <ul>
-                  <li>Cache files: {{ cacheInfo.file_count }}</li>
-                  <li>
-                    Disk usage: {{ cacheInfo.total_size_mb.toFixed(2) }} MB
-                  </li>
-                </ul>
+                <p>📊 {{ cacheInfo.file_count }} files, {{ cacheInfo.total_size_mb.toFixed(2) }} MB</p>
               </div>
               <div class="cache-buttons btn-group-tight">
                 <button
@@ -220,20 +200,16 @@
                   class="btn-info btn-small"
                   :disabled="isRefreshingCache"
                 >
-                  {{ isRefreshingCache ? "Refreshing..." : "🔄 Refresh Info" }}
+                  {{ isRefreshingCache ? "Refreshing..." : "🔄 Refresh" }}
                 </button>
                 <button
                   @click="clearCache"
                   class="btn-danger btn-small"
                   :disabled="isClearingCache"
                 >
-                  {{ isClearingCache ? "Clearing..." : "🗑️ Clear Cache" }}
+                  {{ isClearingCache ? "Clearing..." : "🗑️ Clear" }}
                 </button>
               </div>
-              <small
-                >Cache accelerates speech synthesis for repeated texts but uses
-                disk space</small
-              >
             </div>
           </div>
         </div>
@@ -243,17 +219,14 @@
     <!-- Main Interface -->
     <header>
       <div class="header-logo">
-        <img
-          src="/src/assets/alouette_small.png"
-          alt="Alouette"
-          style="width: 24px; height: 24px; object-fit: contain"
-        />
+        🐦
       </div>
       <h1>Alouette</h1>
       <div class="header-actions">
         <button @click="showSettings = true" class="btn-light btn-small">
           ⚙️ Settings
         </button>
+
         <button
           @click="translateText"
           :disabled="
