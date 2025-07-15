@@ -1,31 +1,9 @@
-[target.x86_64-linux-android]
-linker = "x86_64-linux-android28-clang"
-rustflags = [
-    "-C", "link-arg=-lc++_shared",
-    "-C", "link-arg=-llog",
-    "-C", "link-arg=-landroid"
-]
+[build]
+rustflags = ["-C", "debuginfo=2"]
 
-[target.aarch64-linux-android]
-linker = "aarch64-linux-android28-clang"
-rustflags = [
-    "-C", "link-arg=-lc++_shared",
-    "-C", "link-arg=-llog", 
-    "-C", "link-arg=-landroid"
-]
-
-[target.armv7-linux-androideabi]
-linker = "armv7a-linux-androideabi28-clang"
-rustflags = [
-    "-C", "link-arg=-lc++_shared",
-    "-C", "link-arg=-llog",
-    "-C", "link-arg=-landroid"
-]
-
-[target.i686-linux-android]
-linker = "i686-linux-android28-clang"
-rustflags = [
-    "-C", "link-arg=-lc++_shared",
-    "-C", "link-arg=-llog",
-    "-C", "link-arg=-landroid"
-]
+[profile.release]
+opt-level = 1
+debug = true
+panic = "unwind"
+strip = false
+lto = false

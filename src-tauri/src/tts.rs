@@ -156,8 +156,8 @@ impl TTSEngine {
             VoiceInfo::new("ar-SA-HamedNeural", "Hamed", "Arabic", "Male", "ar-SA", "ar-SA-HamedNeural"),
             
             // Japanese
-            VoiceInfo::new("ja-JP-NanamiNeural", "Nanami", "Japanese", "Female", "ja-JP", "ja-JP-NanamiNeural"),
-            VoiceInfo::new("ja-JP-KeitaNeural", "Keita", "Japanese", "Male", "ja-JP", "ja-JP-KeitaNeural"),
+            VoiceInfo::new("ja-JP-NanamiNeural", "ななみ", "Japanese", "Female", "ja-JP", "ja-JP-NanamiNeural"),
+            VoiceInfo::new("ja-JP-KeitaNeural", "けいた", "Japanese", "Male", "ja-JP", "ja-JP-KeitaNeural"),
             
             // Korean
             VoiceInfo::new("ko-KR-SunHiNeural", "Sun-Hi", "Korean", "Female", "ko-KR", "ko-KR-SunHiNeural"),
@@ -236,8 +236,8 @@ impl TTSEngine {
         ]);
 
         voices_map.insert("Japanese".to_string(), vec![
-            "ja-JP-NanamiNeural (Nanami, Female, Gentle)".to_string(),
-            "ja-JP-KeitaNeural (Keita, Male, Natural)".to_string(),
+            "ja-JP-NanamiNeural (ななみ, Female, Gentle)".to_string(),
+            "ja-JP-KeitaNeural (けいた, Male, Natural)".to_string(),
         ]);
 
         voices_map.insert("Korean".to_string(), vec![
@@ -264,58 +264,7 @@ impl TTSEngine {
         }
     }
 
-    /// Detect text script for language detection
-    fn detect_text_script(text: &str) -> Option<String> {
-        // Simple script detection based on character ranges
-        let trimmed = text.trim();
-        
-        // Chinese characters
-        if trimmed.chars().any(|c| '\u{4E00}' <= c && c <= '\u{9FFF}') {
-            return Some("Chinese".to_string());
-        }
-        
-        // Japanese characters (Hiragana, Katakana)
-        if trimmed.chars().any(|c| ('\u{3040}' <= c && c <= '\u{309F}') || ('\u{30A0}' <= c && c <= '\u{30FF}')) {
-            return Some("Japanese".to_string());
-        }
-        
-        // Korean characters (Hangul)
-        if trimmed.chars().any(|c| '\u{AC00}' <= c && c <= '\u{D7AF}') {
-            return Some("Korean".to_string());
-        }
-        
-        // Arabic characters
-        if trimmed.chars().any(|c| '\u{0600}' <= c && c <= '\u{06FF}') {
-            return Some("Arabic".to_string());
-        }
-        
-        // Hindi characters (Devanagari)
-        if trimmed.chars().any(|c| '\u{0900}' <= c && c <= '\u{097F}') {
-            return Some("Hindi".to_string());
-        }
-        
-        // Russian/Cyrillic characters
-        if trimmed.chars().any(|c| '\u{0400}' <= c && c <= '\u{04FF}') {
-            return Some("Russian".to_string());
-        }
-        
-        // Greek characters
-        if trimmed.chars().any(|c| '\u{0370}' <= c && c <= '\u{03FF}') {
-            return Some("Greek".to_string());
-        }
-        
-        None
-    }
-    
-    /// Check if script detection is confident
-    fn is_script_confident(script: &str, text: &str) -> bool {
-        // For CJK languages, even a single character is quite confident
-        match script {
-            "Chinese" | "Japanese" | "Korean" => true,
-            "Arabic" | "Hindi" | "Russian" | "Greek" => text.chars().count() >= 3,
-            _ => false
-        }
-    }
+
     
     /// Select voice for specific language
     fn select_voice_for_language(&self, language: &str) -> VoiceInfo {
@@ -388,39 +337,56 @@ impl TTSEngine {
     /// Pure Rust implementation of Edge TTS API
     /// This doesn't require edge-tts command line tool
     async fn synthesize_with_edge_tts_api(&self, text: &str, voice: &str) -> Result<Vec<u8>, String> {
-        println!("🌐 Attempting Edge TTS API synthesis with voice: {}", voice);
+        println!("🌐 [TTS-EDGE-API] Attempting Edge TTS API synthesis");
+        println!("🌐 [TTS-EDGE-API] Voice: {}", voice);
         
         // Create Edge TTS client
+        println!("🔧 [TTS-EDGE-API] Creating Edge TTS client...");
         let client = EdgeTTSClient::new().await
-            .map_err(|e| format!("Failed to create Edge TTS client: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [TTS-EDGE-API] Failed to create client: {}", e);
+                format!("Failed to create Edge TTS client: {}", e)
+            })?;
+        
+        println!("✅ [TTS-EDGE-API] Client created successfully");
         
         // Find the voice or use a fallback
+        println!("🔍 [TTS-EDGE-API] Looking for voice: {}", voice);
         let selected_voice = if let Some(voice_info) = client.find_voice_by_language(voice) {
+            println!("✅ [TTS-EDGE-API] Found voice: {}", voice_info.short_name);
             voice_info.short_name.clone()
         } else {
             // Try to use the voice name directly
+            println!("⚠️ [TTS-EDGE-API] Voice not found, trying direct name: {}", voice);
             voice.to_string()
         };
         
-        println!("🎙️ Using Edge TTS voice: {}", selected_voice);
+        println!("🎙️ [TTS-EDGE-API] Using Edge TTS voice: {}", selected_voice);
         
         // Perform synthesis
+        println!("🔄 [TTS-EDGE-API] Starting synthesis...");
         let audio_data = client.synthesize(text, &selected_voice).await
-            .map_err(|e| format!("Edge TTS synthesis failed: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [TTS-EDGE-API] Synthesis failed: {}", e);
+                format!("Edge TTS synthesis failed: {}", e)
+            })?;
             
         if audio_data.is_empty() {
+            println!("❌ [TTS-EDGE-API] Empty audio data returned");
             return Err("Edge TTS returned empty audio data".to_string());
         }
         
-        println!("✅ Edge TTS API synthesis successful: {} bytes", audio_data.len());
+        println!("✅ [TTS-EDGE-API] Synthesis successful: {} bytes", audio_data.len());
         Ok(audio_data)
     }
 
     /// Original edge-tts command line implementation (fallback)
     async fn synthesize_with_edge_tts_cli(&self, text: &str, voice: &str) -> Result<Vec<u8>, String> {
-        println!("🔧 Attempting edge-tts CLI synthesis with voice: {}", voice);
+        println!("🔧 [TTS-EDGE-CLI] Attempting edge-tts CLI synthesis");
+        println!("🔧 [TTS-EDGE-CLI] Voice: {}", voice);
         
         // Try Edge TTS command
+        println!("🔧 [TTS-EDGE-CLI] Executing edge-tts command...");
         let output = tokio::process::Command::new("edge-tts")
             .args(&[
                 "--voice", voice,
@@ -432,30 +398,51 @@ impl TTSEngine {
             
         match output {
             Ok(result) => {
+                println!("🔧 [TTS-EDGE-CLI] Command executed, status: {}", result.status);
                 if result.status.success() && !result.stdout.is_empty() {
-                    println!("✅ Edge TTS CLI synthesis successful, {} bytes generated", result.stdout.len());
+                    println!("✅ [TTS-EDGE-CLI] CLI synthesis successful, {} bytes generated", result.stdout.len());
                     Ok(result.stdout)
                 } else {
                     let error_msg = String::from_utf8_lossy(&result.stderr);
+                    println!("❌ [TTS-EDGE-CLI] CLI failed: {}", error_msg);
                     Err(format!("Edge TTS CLI failed: {}", error_msg))
                 }
             }
-            Err(e) => Err(format!("Failed to execute edge-tts: {}", e))
+            Err(e) => {
+                println!("❌ [TTS-EDGE-CLI] Failed to execute command: {}", e);
+                Err(format!("Failed to execute edge-tts: {}", e))
+            }
         }
     }
 
     /// Synthesize speech with Edge TTS - tries API first, then CLI
     async fn synthesize_with_edge_tts(&self, text: &str, voice: &str) -> Result<Vec<u8>, String> {
+        println!("🌐 [TTS-EDGE] Starting Edge TTS synthesis");
+        println!("🌐 [TTS-EDGE] Voice: {}", voice);
+        println!("🌐 [TTS-EDGE] Text length: {} chars", text.len());
+        
         // Method 1: Try pure Rust API implementation (preferred)
+        println!("🦀 [TTS-EDGE] Trying Rust API implementation...");
         match self.synthesize_with_edge_tts_api(text, voice).await {
-            Ok(audio_data) => return Ok(audio_data),
+            Ok(audio_data) => {
+                println!("✅ [TTS-EDGE] Rust API synthesis successful");
+                return Ok(audio_data);
+            },
             Err(e) => {
-                println!("⚠️ Edge TTS API failed: {}, trying CLI fallback", e);
+                println!("⚠️ [TTS-EDGE] Rust API failed: {}, trying CLI fallback", e);
             }
         }
         
         // Method 2: Fallback to command line tool
-        self.synthesize_with_edge_tts_cli(text, voice).await
+        println!("🔧 [TTS-EDGE] Trying CLI fallback...");
+        let result = self.synthesize_with_edge_tts_cli(text, voice).await;
+        
+        match &result {
+            Ok(audio_data) => println!("✅ [TTS-EDGE] CLI synthesis successful: {} bytes", audio_data.len()),
+            Err(e) => println!("❌ [TTS-EDGE] CLI synthesis failed: {}", e),
+        }
+        
+        result
     }
     
     /// Synthesize speech with local TTS engine
@@ -515,59 +502,71 @@ impl TTSEngine {
 
     pub async fn synthesize_speech(&self, text: &str, language: &str) -> Result<Vec<u8>, String> {
         let display_text = Self::safe_truncate(text, 50);
-        println!("🔊 TTS synthesis request: language={}, text_length={}, content='{}'", 
-                 language, text.chars().count(), display_text);
+        println!("🔊 [TTS-MAIN] Starting synthesis request");
+        println!("🔊 [TTS-MAIN] Language: {}", language);
+        println!("🔊 [TTS-MAIN] Text length: {} chars", text.chars().count());
+        println!("🔊 [TTS-MAIN] Content preview: '{}'", display_text);
+        println!("🔊 [TTS-MAIN] Cache directory: {:?}", self.cache_dir);
 
         // Basic text validation
         if text.trim().is_empty() {
+            println!("❌ [TTS-MAIN] Error: Empty text provided");
             return Err("Cannot synthesize empty text".to_string());
         }
 
+        // Check network connectivity for Edge TTS
+        println!("🌐 [TTS-MAIN] Checking network connectivity for Edge TTS...");
+        match self.check_network_connectivity().await {
+            Ok(()) => println!("✅ [TTS-MAIN] Network connectivity OK"),
+            Err(e) => println!("⚠️ [TTS-MAIN] Network connectivity issue: {}", e),
+        }
+
         // Unified TTS approach for all platforms
-        self.synthesize_unified(text, language).await
+        println!("🔄 [TTS-MAIN] Starting unified synthesis...");
+        let result = self.synthesize_unified(text, language).await;
+        
+        match &result {
+            Ok(data) => println!("✅ [TTS-MAIN] Synthesis successful: {} bytes", data.len()),
+            Err(e) => println!("❌ [TTS-MAIN] Synthesis failed: {}", e),
+        }
+        
+        result
     }
 
     /// Unified TTS synthesis that works on all platforms
     async fn synthesize_unified(&self, text: &str, language: &str) -> Result<Vec<u8>, String> {
-        // Language validation and detection
-        let final_language = if let Some(detected_script) = Self::detect_text_script(text) {
-            if detected_script != language {
-                println!("⚠️ Language mismatch detected. Requested: {}, Text appears to be: {}", 
-                        language, detected_script);
-                // Use detected language if confidence is high
-                if Self::is_script_confident(&detected_script, text) {
-                    println!("✅ Using detected language '{}' instead of requested '{}'", detected_script, language);
-                    detected_script
-                } else {
-                    language.to_string()
-                }
-            } else {
-                language.to_string()
-            }
-        } else {
-            language.to_string()
-        };
+        // Use the language parameter directly as specified by the user interface
+        // This prevents incorrect auto-detection (e.g., Japanese text with kanji being detected as Chinese)
+        let final_language = language.to_string();
+        
+        println!("🎯 [TTS-UNIFIED] Using specified language: {}", final_language);
 
         let selected_voice = self.select_voice_for_language(&final_language);
-        println!("🎙️ Selected voice: {} ({}) for language: {}", selected_voice.edge_voice, selected_voice.display_name, final_language);
+        println!("🎙️ [TTS-UNIFIED] Selected voice: {} ({}) for language: {}", 
+                 selected_voice.edge_voice, selected_voice.display_name, final_language);
 
         // Generate cache key
         let cache_key = self.generate_cache_key(text, &selected_voice.edge_voice);
+        println!("🔑 [TTS-UNIFIED] Cache key: {}", cache_key);
         
         // Try to get from cache first
+        println!("💾 [TTS-UNIFIED] Checking cache...");
         if let Some(cached_audio) = self.get_from_cache(&cache_key).await {
-            println!("💾 Using cached TTS audio, audio size: {} bytes", cached_audio.len());
+            println!("💾 [TTS-UNIFIED] Cache hit! Using cached audio, size: {} bytes", cached_audio.len());
             return Ok(cached_audio);
         }
 
-        println!("🔄 Cache miss, starting TTS synthesis...");
+        println!("🔄 [TTS-UNIFIED] Cache miss, starting TTS synthesis...");
         
         // Try different TTS methods in order of preference
         let audio_data = self.try_tts_methods(text, &selected_voice).await?;
 
         // Save result to cache
+        println!("💾 [TTS-UNIFIED] Saving to cache...");
         if let Err(e) = self.save_to_cache(&cache_key, &audio_data).await {
-            println!("⚠️ Failed to save TTS cache: {}", e);
+            println!("⚠️ [TTS-UNIFIED] Failed to save TTS cache: {}", e);
+        } else {
+            println!("✅ [TTS-UNIFIED] Successfully saved to cache");
         }
 
         Ok(audio_data)
@@ -575,80 +574,83 @@ impl TTSEngine {
 
     /// Try different TTS methods in order of preference
     async fn try_tts_methods(&self, text: &str, voice: &VoiceInfo) -> Result<Vec<u8>, String> {
+        println!("🚀 [TTS-METHODS] Starting TTS method attempts...");
+        
         // Method 1: Try Edge TTS (best quality, works on all platforms if installed)
-        println!("🌟 Trying Edge TTS...");
+        println!("🌟 [TTS-METHODS] Method 1: Trying Edge TTS...");
         match self.synthesize_with_edge_tts(text, &voice.edge_voice).await {
             Ok(audio_data) => {
-                println!("✅ Edge TTS synthesis successful, {} bytes generated", audio_data.len());
+                println!("✅ [TTS-METHODS] Edge TTS synthesis successful, {} bytes generated", audio_data.len());
                 return Ok(audio_data);
             },
             Err(e) => {
-                println!("❌ Edge TTS failed: {}", e);
+                println!("❌ [TTS-METHODS] Edge TTS failed: {}", e);
             }
         }
 
         // Method 2: Try local TTS engines (espeak-ng, flite)
-        println!("🔧 Trying local TTS engines...");
+        println!("🔧 [TTS-METHODS] Method 2: Trying local TTS engines...");
         match self.synthesize_with_local_tts(text, &voice.locale).await {
             Ok(audio_data) => {
-                println!("✅ Local TTS synthesis successful, {} bytes generated", audio_data.len());
+                println!("✅ [TTS-METHODS] Local TTS synthesis successful, {} bytes generated", audio_data.len());
                 return Ok(audio_data);
             },
             Err(e) => {
-                println!("❌ Local TTS failed: {}", e);
+                println!("❌ [TTS-METHODS] Local TTS failed: {}", e);
             }
         }
 
         // Method 3: Platform-specific fallbacks
         #[cfg(target_os = "android")]
         {
-            println!("📱 Trying Android-specific TTS...");
+            println!("📱 [TTS-METHODS] Method 3: Trying Android-specific TTS...");
             match self.try_android_tts_fallback(text, &voice.locale).await {
                 Ok(audio_data) => {
-                    println!("✅ Android TTS synthesis successful, {} bytes generated", audio_data.len());
+                    println!("✅ [TTS-METHODS] Android TTS synthesis successful, {} bytes generated", audio_data.len());
                     return Ok(audio_data);
                 },
                 Err(e) => {
-                    println!("❌ Android TTS failed: {}", e);
+                    println!("❌ [TTS-METHODS] Android TTS failed: {}", e);
                 }
             }
         }
 
         #[cfg(target_os = "macos")]
         {
-            println!("🍎 Trying macOS TTS...");
+            println!("🍎 [TTS-METHODS] Method 3: Trying macOS TTS...");
             match self.try_macos_tts(text, &voice.locale).await {
                 Ok(audio_data) => {
-                    println!("✅ macOS TTS synthesis successful, {} bytes generated", audio_data.len());
+                    println!("✅ [TTS-METHODS] macOS TTS synthesis successful, {} bytes generated", audio_data.len());
                     return Ok(audio_data);
                 },
                 Err(e) => {
-                    println!("❌ macOS TTS failed: {}", e);
+                    println!("❌ [TTS-METHODS] macOS TTS failed: {}", e);
                 }
             }
         }
 
         #[cfg(target_os = "windows")]
         {
-            println!("🪟 Trying Windows TTS...");
+            println!("🪟 [TTS-METHODS] Method 3: Trying Windows TTS...");
             match self.try_windows_tts(text, &voice.locale).await {
                 Ok(audio_data) => {
-                    println!("✅ Windows TTS synthesis successful, {} bytes generated", audio_data.len());
+                    println!("✅ [TTS-METHODS] Windows TTS synthesis successful, {} bytes generated", audio_data.len());
                     return Ok(audio_data);
                 },
                 Err(e) => {
-                    println!("❌ Windows TTS failed: {}", e);
+                    println!("❌ [TTS-METHODS] Windows TTS failed: {}", e);
                 }
             }
         }
 
         // All methods failed
+        println!("🚫 [TTS-METHODS] All TTS methods failed");
         Err(format!(
             "🚫 All TTS methods failed for text: '{}', language: '{}'.\n\
             🌐 Primary method: Edge TTS WebSocket API (requires internet)\n\
             🔧 Fallback method: Local TTS engines (espeak-ng, flite)\n\
-            � Platform method: System TTS\n\
-            �💡 Recommendations:\n\
+            💻 Platform method: System TTS\n\
+            💡 Recommendations:\n\
             • Check internet connection for Edge TTS API\n\
             • Ensure network access to speech.platform.bing.com\n\
             • Install local TTS: apt install espeak-ng (Linux) or brew install espeak (macOS)\n\
@@ -657,17 +659,71 @@ impl TTSEngine {
         ))
     }
 
+    /// Check network connectivity for Edge TTS
+    async fn check_network_connectivity(&self) -> Result<(), String> {
+        println!("🌐 [TTS-NETWORK] Testing connection to Edge TTS servers...");
+        
+        // Test DNS resolution first
+        match tokio::net::lookup_host("speech.platform.bing.com:443").await {
+            Ok(addrs) => {
+                let addr_list: Vec<_> = addrs.collect();
+                println!("✅ [TTS-NETWORK] DNS resolution successful: {} addresses", addr_list.len());
+                for addr in addr_list.iter().take(3) {
+                    println!("🔍 [TTS-NETWORK] Address: {}", addr);
+                }
+            }
+            Err(e) => {
+                println!("❌ [TTS-NETWORK] DNS resolution failed: {}", e);
+                return Err(format!("DNS resolution failed: {}", e));
+            }
+        }
+        
+        // Test HTTP connectivity
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+            
+        let test_url = "https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4";
+        
+        println!("🌐 [TTS-NETWORK] Testing HTTP connectivity to: {}", test_url);
+        
+        match client.get(test_url).send().await {
+            Ok(response) => {
+                println!("✅ [TTS-NETWORK] HTTP request successful");
+                println!("🔍 [TTS-NETWORK] Response status: {}", response.status());
+                println!("🔍 [TTS-NETWORK] Response headers: {:?}", response.headers());
+                
+                if response.status().is_success() {
+                    println!("✅ [TTS-NETWORK] Edge TTS API is accessible");
+                    Ok(())
+                } else {
+                    let error_msg = format!("Edge TTS API returned status: {}", response.status());
+                    println!("❌ [TTS-NETWORK] {}", error_msg);
+                    Err(error_msg)
+                }
+            }
+            Err(e) => {
+                println!("❌ [TTS-NETWORK] HTTP request failed: {}", e);
+                Err(format!("HTTP request failed: {}", e))
+            }
+        }
+    }
+
     /// Try different TTS methods in order of preference
     pub async fn play_audio_from_bytes(&self, audio_data: &[u8]) -> Result<(), String> {
         if audio_data.is_empty() {
+            println!("❌ [TTS-PLAY] Audio data is empty - nothing to play");
             return Err("Audio data is empty - nothing to play".to_string());
         }
         
-        println!("🔊 Starting audio playback, data size: {} bytes", audio_data.len());
+        println!("🔊 [TTS-PLAY] Starting audio playback, data size: {} bytes", audio_data.len());
         
         // Use rodio to play audio (works on all desktop platforms)
         #[cfg(not(target_os = "android"))]
         {
+            println!("🖥️ [TTS-PLAY] Using desktop audio playback (rodio)");
+            
             use std::sync::mpsc;
             
             // Create audio data copy for the blocking task
@@ -677,19 +733,31 @@ impl TTSEngine {
             let (tx, rx) = mpsc::channel();
             
             tokio::task::spawn_blocking(move || {
+                println!("🎵 [TTS-PLAY] Starting blocking audio task");
                 let result = (|| -> Result<(), String> {
+                    println!("🎵 [TTS-PLAY] Creating audio output stream...");
                     let (_stream, stream_handle) = OutputStream::try_default()
-                        .map_err(|e| format!("Failed to create audio output stream: {}", e))?;
+                        .map_err(|e| {
+                            println!("❌ [TTS-PLAY] Failed to create audio output stream: {}", e);
+                            format!("Failed to create audio output stream: {}", e)
+                        })?;
 
+                    println!("🎵 [TTS-PLAY] Creating audio sink...");
                     let sink = Sink::try_new(&stream_handle)
-                        .map_err(|e| format!("Failed to create audio player: {}", e))?;
+                        .map_err(|e| {
+                            println!("❌ [TTS-PLAY] Failed to create audio player: {}", e);
+                            format!("Failed to create audio player: {}", e)
+                        })?;
 
+                    println!("🎵 [TTS-PLAY] Decoding audio data...");
                     let cursor = Cursor::new(audio_vec);
                     let source = Decoder::new(cursor)
                         .map_err(|e| {
+                            println!("❌ [TTS-PLAY] Failed to decode audio: {}", e);
                             format!("Failed to decode audio data: {}. This might indicate corrupted audio or unsupported format.", e)
                         })?;
 
+                    println!("🎵 [TTS-PLAY] Starting playback...");
                     sink.append(source);
                     
                     // Wait for playback to complete with timeout
@@ -701,11 +769,12 @@ impl TTSEngine {
                     }
                     
                     if start_time.elapsed() >= play_duration {
-                        println!("⏰ TTS playback timeout - stopping playback");
+                        println!("⏰ [TTS-PLAY] Playback timeout - stopping playback");
                         sink.stop();
                         return Err("TTS playback timeout".to_string());
                     }
 
+                    println!("✅ [TTS-PLAY] Playback completed successfully");
                     Ok(())
                 })();
                 
@@ -716,16 +785,20 @@ impl TTSEngine {
             match rx.recv() {
                 Ok(result) => {
                     result?;
-                    println!("✅ Audio playback completed successfully");
+                    println!("✅ [TTS-PLAY] Audio playback completed successfully");
                     Ok(())
                 }
-                Err(_) => Err("Audio playback task failed".to_string())
+                Err(_) => {
+                    println!("❌ [TTS-PLAY] Audio playback task failed");
+                    Err("Audio playback task failed".to_string())
+                }
             }
         }
         
         // On Android, try to play using system commands
         #[cfg(target_os = "android")]
         {
+            println!("📱 [TTS-PLAY] Using Android audio playback");
             self.play_audio_android(audio_data).await
         }
     }
@@ -1008,19 +1081,23 @@ impl TTSEngine {
 
     /// Play TTS for given text and language
     pub async fn play_tts(&self, text: &str, language: &str) -> Result<(), String> {
-        println!("🎵 Starting TTS playback for: '{}'", Self::safe_truncate(text, 50));
+        println!("🎵 [TTS-PLAY-TTS] Starting TTS playback");
+        println!("🎵 [TTS-PLAY-TTS] Text: '{}'", Self::safe_truncate(text, 50));
+        println!("🎵 [TTS-PLAY-TTS] Language: {}", language);
         
+        println!("🔄 [TTS-PLAY-TTS] Calling synthesize_speech...");
         let audio_data = self.synthesize_speech(text, language).await?;
         
         // Check for special success indicators from platform-specific TTS
         if let Ok(response_str) = String::from_utf8(audio_data.clone()) {
             if response_str == "TTS_SUCCESS_TERMUX" {
-                println!("✅ Termux TTS completed successfully (audio played directly)");
+                println!("✅ [TTS-PLAY-TTS] Termux TTS completed successfully (audio played directly)");
                 return Ok(());
             }
         }
 
         // For all other cases, we should have actual audio data to play
+        println!("🔄 [TTS-PLAY-TTS] Calling play_audio_from_bytes...");
         self.play_audio_from_bytes(&audio_data).await
     }
 }

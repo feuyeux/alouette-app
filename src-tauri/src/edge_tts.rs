@@ -31,10 +31,18 @@ pub struct EdgeTTSClient {
 impl EdgeTTSClient {
     /// Create a new Edge TTS client
     pub async fn new() -> Result<Self, String> {
+        println!("🌐 [EDGE-TTS-CLIENT] Creating new Edge TTS client...");
+        
         let client = reqwest::Client::builder()
             .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.66 Safari/537.36 Edg/103.0.1264.44")
+            .timeout(std::time::Duration::from_secs(30))
             .build()
-            .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [EDGE-TTS-CLIENT] Failed to create HTTP client: {}", e);
+                format!("Failed to create HTTP client: {}", e)
+            })?;
+
+        println!("✅ [EDGE-TTS-CLIENT] HTTP client created successfully");
 
         let mut edge_client = EdgeTTSClient {
             voices: Vec::new(),
@@ -42,7 +50,9 @@ impl EdgeTTSClient {
         };
 
         // Load voices
+        println!("🔄 [EDGE-TTS-CLIENT] Loading voices...");
         edge_client.load_voices().await?;
+        println!("✅ [EDGE-TTS-CLIENT] Client created with {} voices", edge_client.voices.len());
         Ok(edge_client)
     }
 
@@ -50,7 +60,7 @@ impl EdgeTTSClient {
     async fn load_voices(&mut self) -> Result<(), String> {
         let voices_url = "https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4";
         
-        println!("🌐 Loading Edge TTS voices...");
+        println!("🌐 [EDGE-TTS-VOICES] Loading Edge TTS voices from: {}", voices_url);
         
         let response = self.client
             .get(voices_url)
@@ -63,18 +73,39 @@ impl EdgeTTSClient {
             .header("Sec-Fetch-Site", "none")
             .send()
             .await
-            .map_err(|e| format!("Failed to fetch voices: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [EDGE-TTS-VOICES] Failed to fetch voices: {}", e);
+                format!("Failed to fetch voices: {}", e)
+            })?;
+
+        println!("📡 [EDGE-TTS-VOICES] Response status: {}", response.status());
+        println!("📡 [EDGE-TTS-VOICES] Response headers: {:?}", response.headers());
 
         if !response.status().is_success() {
+            println!("❌ [EDGE-TTS-VOICES] Bad response status: {}", response.status());
             return Err(format!("Failed to fetch voices, status: {}", response.status()));
         }
 
         let voices: Vec<EdgeVoice> = response
             .json()
             .await
-            .map_err(|e| format!("Failed to parse voices JSON: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [EDGE-TTS-VOICES] Failed to parse voices JSON: {}", e);
+                format!("Failed to parse voices JSON: {}", e)
+            })?;
 
-        println!("✅ Loaded {} Edge TTS voices", voices.len());
+        println!("✅ [EDGE-TTS-VOICES] Loaded {} Edge TTS voices", voices.len());
+        
+        // Log some voice examples
+        for (i, voice) in voices.iter().take(5).enumerate() {
+            println!("🎙️ [EDGE-TTS-VOICES] Voice {}: {} ({}) - {}", 
+                     i + 1, voice.friendly_name, voice.short_name, voice.locale);
+        }
+        
+        if voices.len() > 5 {
+            println!("🎙️ [EDGE-TTS-VOICES] ... and {} more voices", voices.len() - 5);
+        }
+        
         self.voices = voices;
         Ok(())
     }
@@ -126,15 +157,25 @@ impl EdgeTTSClient {
 
     /// Synthesize speech using Edge TTS WebSocket API
     pub async fn synthesize(&self, text: &str, voice_name: &str) -> Result<Vec<u8>, String> {
+        println!("🎙️ [EDGE-TTS-SYNTH] Starting synthesis");
+        println!("🎙️ [EDGE-TTS-SYNTH] Text length: {} chars", text.len());
+        println!("🎙️ [EDGE-TTS-SYNTH] Requested voice: {}", voice_name);
+        
         let voice = self.voices.iter()
             .find(|v| v.short_name == voice_name || v.name == voice_name)
-            .ok_or_else(|| format!("Voice '{}' not found", voice_name))?;
+            .ok_or_else(|| {
+                println!("❌ [EDGE-TTS-SYNTH] Voice '{}' not found", voice_name);
+                format!("Voice '{}' not found", voice_name)
+            })?;
 
-        println!("🎙️ Synthesizing with voice: {} ({})", voice.friendly_name, voice.short_name);
+        println!("🎙️ [EDGE-TTS-SYNTH] Using voice: {} ({})", voice.friendly_name, voice.short_name);
 
         // Generate unique request ID
         let request_id = Uuid::new_v4().to_string().replace("-", "");
         let connection_id = Uuid::new_v4().to_string().replace("-", "");
+        
+        println!("🔑 [EDGE-TTS-SYNTH] Request ID: {}", request_id);
+        println!("🔑 [EDGE-TTS-SYNTH] Connection ID: {}", connection_id);
 
         // Prepare WebSocket URL
         let ws_url = format!(
@@ -142,12 +183,18 @@ impl EdgeTTSClient {
             connection_id
         );
 
-        println!("🔗 Connecting to Edge TTS WebSocket...");
+        println!("🔗 [EDGE-TTS-SYNTH] Connecting to WebSocket: {}", ws_url);
 
         // Connect to WebSocket
-        let (ws_stream, _) = connect_async(&ws_url)
+        let (ws_stream, response) = connect_async(&ws_url)
             .await
-            .map_err(|e| format!("Failed to connect to Edge TTS WebSocket: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [EDGE-TTS-SYNTH] Failed to connect to WebSocket: {}", e);
+                format!("Failed to connect to Edge TTS WebSocket: {}", e)
+            })?;
+
+        println!("✅ [EDGE-TTS-SYNTH] WebSocket connected successfully");
+        println!("🔍 [EDGE-TTS-SYNTH] Response status: {}", response.status());
 
         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
@@ -157,11 +204,16 @@ impl EdgeTTSClient {
             Self::get_timestamp()
         );
 
+        println!("📤 [EDGE-TTS-SYNTH] Sending configuration...");
         ws_sender.send(Message::Text(config_message)).await
-            .map_err(|e| format!("Failed to send config: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [EDGE-TTS-SYNTH] Failed to send config: {}", e);
+                format!("Failed to send config: {}", e)
+            })?;
 
         // Generate SSML
         let ssml = self.generate_ssml(text, voice);
+        println!("📝 [EDGE-TTS-SYNTH] Generated SSML: {}", ssml);
 
         // Send synthesis request
         let synthesis_message = format!(
@@ -171,53 +223,76 @@ impl EdgeTTSClient {
             ssml
         );
 
+        println!("📤 [EDGE-TTS-SYNTH] Sending synthesis request...");
         ws_sender.send(Message::Text(synthesis_message)).await
-            .map_err(|e| format!("Failed to send synthesis request: {}", e))?;
+            .map_err(|e| {
+                println!("❌ [EDGE-TTS-SYNTH] Failed to send synthesis request: {}", e);
+                format!("Failed to send synthesis request: {}", e)
+            })?;
 
         // Collect audio data
         let mut audio_data = Vec::new();
         let mut synthesis_complete = false;
+        let mut message_count = 0;
 
+        println!("📥 [EDGE-TTS-SYNTH] Waiting for audio data...");
+        
         while let Some(message) = ws_receiver.next().await {
+            message_count += 1;
+            
             match message {
                 Ok(Message::Text(text)) => {
+                    println!("📨 [EDGE-TTS-SYNTH] Received text message #{}: {}", message_count, text);
+                    
                     if text.contains("Path:turn.end") {
                         synthesis_complete = true;
+                        println!("✅ [EDGE-TTS-SYNTH] Synthesis completed (turn.end received)");
                         break;
                     }
                     if text.contains("Path:response") {
-                        // Audio metadata, ignore for now
+                        println!("📋 [EDGE-TTS-SYNTH] Response metadata received");
                         continue;
                     }
                 }
                 Ok(Message::Binary(data)) => {
+                    println!("📦 [EDGE-TTS-SYNTH] Received binary message #{}: {} bytes", message_count, data.len());
+                    
                     // Check if this is audio data (skip headers)
                     if data.len() > 2 {
-                        // Find audio data start (skip WebSocket headers)
                         if let Some(audio_start) = self.find_audio_start(&data) {
-                            audio_data.extend_from_slice(&data[audio_start..]);
+                            let audio_chunk = &data[audio_start..];
+                            println!("🎵 [EDGE-TTS-SYNTH] Found audio chunk: {} bytes (header skip: {})", audio_chunk.len(), audio_start);
+                            audio_data.extend_from_slice(audio_chunk);
+                        } else {
+                            println!("⚠️ [EDGE-TTS-SYNTH] No audio data found in binary message");
                         }
                     }
                 }
                 Ok(Message::Close(_)) => {
+                    println!("🔚 [EDGE-TTS-SYNTH] WebSocket closed");
                     break;
                 }
                 Err(e) => {
+                    println!("❌ [EDGE-TTS-SYNTH] WebSocket error: {}", e);
                     return Err(format!("WebSocket error: {}", e));
                 }
-                _ => {}
+                _ => {
+                    println!("📨 [EDGE-TTS-SYNTH] Other message type received");
+                }
             }
         }
 
         if !synthesis_complete {
+            println!("⚠️ [EDGE-TTS-SYNTH] Synthesis did not complete properly");
             return Err("Synthesis did not complete properly".to_string());
         }
 
         if audio_data.is_empty() {
+            println!("❌ [EDGE-TTS-SYNTH] No audio data received");
             return Err("No audio data received from Edge TTS".to_string());
         }
 
-        println!("✅ Edge TTS synthesis completed, {} bytes generated", audio_data.len());
+        println!("✅ [EDGE-TTS-SYNTH] Synthesis completed successfully: {} bytes", audio_data.len());
         Ok(audio_data)
     }
 

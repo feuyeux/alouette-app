@@ -26,7 +26,7 @@
   user-select: none;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .language-option:hover {
@@ -49,7 +49,7 @@
 
 .language-option .language-flag {
   font-size: var(--font-size-lg);
-  margin-right: var(--spacing-xs);
+  margin-right: var(--spacing-md);
 }
 
 .language-option .language-name {
@@ -126,7 +126,7 @@
   color: var(--color-gray-800);
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .results-actions {
@@ -179,7 +179,7 @@
   color: var(--color-secondary-dark);
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-md);
 }
 
 .language-flag-large {
@@ -253,7 +253,7 @@
   margin-bottom: var(--spacing-md);
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .settings-row {
@@ -280,7 +280,7 @@
 .connection-status {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-md);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
@@ -365,7 +365,7 @@
   margin-bottom: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 
 .warning-icon {

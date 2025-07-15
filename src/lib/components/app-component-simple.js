@@ -18,6 +18,7 @@ export default {
       // UI State
       showSettings: false,
       showTauriWarning: true,
+      logoError: false,
 
       // Input and Selection
       inputText: '',
@@ -227,43 +228,76 @@ export default {
     // ===================
 
     async playTTS(text, lang, showAlert = true) {
+      console.log(`🎵 [FRONTEND-TTS] Starting TTS playback`);
+      console.log(`🎵 [FRONTEND-TTS] Text: "${text.substring(0, 100)}${text.length > 100 ? '...' : ''}"`);
+      console.log(`🎵 [FRONTEND-TTS] Language: ${lang}`);
+      console.log(`🎵 [FRONTEND-TTS] Show alert on error: ${showAlert}`);
+      
       try {
-        const { invoke } = await import('@tauri-apps/api/core')
-        this.playingText = text
-        await invoke('play_tts', { text: text, lang: lang })
-        this.playingText = null
+        console.log(`🔄 [FRONTEND-TTS] Importing Tauri API...`);
+        const { invoke } = await import('@tauri-apps/api/core');
+        
+        console.log(`🔄 [FRONTEND-TTS] Setting playing state...`);
+        this.playingText = text;
+        
+        console.log(`🔄 [FRONTEND-TTS] Invoking play_tts command...`);
+        const startTime = Date.now();
+        
+        await invoke('play_tts', { text: text, lang: lang });
+        
+        const duration = Date.now() - startTime;
+        console.log(`✅ [FRONTEND-TTS] TTS playback completed successfully in ${duration}ms`);
+        
+        this.playingText = null;
       } catch (error) {
-        this.playingText = null
+        console.error(`❌ [FRONTEND-TTS] TTS playback failed:`, error);
+        console.error(`❌ [FRONTEND-TTS] Error details:`, {
+          message: error.message || 'Unknown error',
+          stack: error.stack || 'No stack trace',
+          type: typeof error,
+          text: text.substring(0, 50),
+          lang: lang
+        });
+        
+        this.playingText = null;
+        
         if (showAlert) {
-          alert(`TTS failed: ${error.message || error}`)
+          alert(`TTS failed: ${error.message || error}`);
         }
-        throw error // Re-throw so calling functions can handle it
+        throw error; // Re-throw so calling functions can handle it
       }
     },
 
     async playAll() {
       if (!this.currentTranslation || this.isPlayingAll) return
 
+      console.log(`🎵 [FRONTEND-PLAY-ALL] Starting play all`);
+      console.log(`🎵 [FRONTEND-PLAY-ALL] Languages to play: ${this.orderedLanguages.join(', ')}`);
+      console.log(`🎵 [FRONTEND-PLAY-ALL] Pause between languages: ${this.ttsSettings.pauseBetweenLanguages}ms`);
+
       this.isPlayingAll = true
       try {
-        // Play original text first
-        await this.playTTS(this.currentTranslation.original, 'English', false)
-
-        // Wait between languages
-        await new Promise(resolve => setTimeout(resolve, this.ttsSettings.pauseBetweenLanguages))
-
-        // Play all translations
-        for (const lang of this.orderedLanguages) {
+        for (const [index, lang] of this.orderedLanguages.entries()) {
           if (this.currentTranslation.translations[lang]) {
-            await this.playTTS(this.currentTranslation.translations[lang], lang, false)
-            await new Promise(resolve => setTimeout(resolve, this.ttsSettings.pauseBetweenLanguages))
+            console.log(`🎵 [FRONTEND-PLAY-ALL] Playing ${index + 1}/${this.orderedLanguages.length}: ${lang}`);
+            
+            await this.playTTS(this.currentTranslation.translations[lang], lang, false);
+            
+            if (index < this.orderedLanguages.length - 1) {
+              console.log(`⏸️ [FRONTEND-PLAY-ALL] Pausing for ${this.ttsSettings.pauseBetweenLanguages}ms`);
+              await new Promise(resolve => setTimeout(resolve, this.ttsSettings.pauseBetweenLanguages));
+            }
+          } else {
+            console.log(`⚠️ [FRONTEND-PLAY-ALL] No translation found for ${lang}`);
           }
         }
+        console.log(`✅ [FRONTEND-PLAY-ALL] Play all completed successfully`);
       } catch (error) {
-        alert(`Playback failed: ${error.message || error}`)
+        console.error(`❌ [FRONTEND-PLAY-ALL] Play all failed:`, error);
+        alert(`Playback failed: ${error.message || error}`);
       } finally {
-        this.isPlayingAll = false
-        this.playingText = null
+        this.isPlayingAll = false;
+        this.playingText = null;
       }
     },
 
@@ -273,11 +307,16 @@ export default {
     },
 
     async testTTS() {
+      console.log(`🧪 [FRONTEND-TTS-TEST] Starting TTS test`);
+      
       this.isTesting = true
       try {
+        console.log(`🧪 [FRONTEND-TTS-TEST] Calling playTTS with test message`);
         await this.playTTS('Hello! This is a TTS test.', 'English', false) // Don't show alert in playTTS
+        console.log(`✅ [FRONTEND-TTS-TEST] TTS test completed successfully`);
         alert('✅ TTS test completed successfully!')
       } catch (error) {
+        console.error(`❌ [FRONTEND-TTS-TEST] TTS test failed:`, error);
         alert(`❌ TTS test failed: ${error.message || error}`)
       } finally {
         this.isTesting = false
@@ -424,6 +463,15 @@ export default {
 
     getLanguageClass(language) {
       return `lang-${language.toLowerCase().replace(/\s+/g, '-')}`
+    },
+
+    // ===================
+    // Logo Management
+    // ===================
+
+    handleLogoError() {
+      console.log('Logo image failed to load, switching to SVG fallback')
+      this.logoError = true
     },
   }
 }

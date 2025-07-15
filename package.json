@@ -7,12 +7,14 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
-    "build:android": "scripts/patch-android-manifest.sh && tauri android build",
+    "build:android": "scripts/ensure-android-config.sh && tauri android build",
     "build:ios": "tauri ios build",
-    "dev:android": "scripts/patch-android-manifest.sh && tauri android dev",
+    "dev:android": "scripts/ensure-android-config.sh && tauri android dev",
     "dev:ios": "tauri ios dev",
     "vite:build": "vite build",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "android:init": "tauri android init && scripts/ensure-android-config.sh",
+    "android:config": "scripts/ensure-android-config.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

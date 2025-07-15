@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" style="margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column;">
     <!-- Settings Panel -->
     <div class="settings-panel" v-if="showSettings">
       <div class="settings-overlay" @click="showSettings = false"></div>
@@ -219,7 +219,17 @@
     <!-- Main Interface -->
     <header>
       <div class="header-logo">
-        🐦
+        <img 
+          src="./assets/alouette_small.png" 
+          alt="Alouette Logo" 
+          class="logo-image"
+          @error="handleLogoError"
+          v-if="!logoError"
+        />
+        <svg v-else class="logo-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z" fill="currentColor"/>
+          <path d="M12 8l-3 3h2v4h2v-4h2l-3-3z" fill="white"/>
+        </svg>
       </div>
       <h1>Alouette</h1>
       <div class="header-actions">
@@ -348,7 +358,7 @@
     </div>
 
     <!-- Translation Results -->
-    <div class="results-section" v-if="currentTranslation">
+    <div class="results-section" v-if="currentTranslation" style="margin-bottom: 0;">
       <div class="results-header">
         <h3>📚 Translation Results</h3>
         <div class="control-buttons btn-group-tight">
@@ -410,32 +420,6 @@
                 : "▶️"
             }}
           </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Results Placeholder -->
-    <div v-else class="results-placeholder">
-      <div class="placeholder-content">
-        <div class="placeholder-icon">🌐</div>
-        <h3>Ready to Translate</h3>
-        <p>
-          Enter text above, select your target languages, and click "Translate"
-          to see results here.
-        </p>
-        <div class="placeholder-steps">
-          <div class="step">
-            <span class="step-number">1</span>
-            <span class="step-text">Select languages</span>
-          </div>
-          <div class="step">
-            <span class="step-number">2</span>
-            <span class="step-text">Enter text</span>
-          </div>
-          <div class="step">
-            <span class="step-number">3</span>
-            <span class="step-text">Translate</span>
-          </div>
         </div>
       </div>
     </div>

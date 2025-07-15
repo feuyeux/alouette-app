@@ -128,16 +128,25 @@ async fn translate_text(request: TranslationRequest) -> Result<TranslationRespon
  */
 #[tauri::command]
 async fn play_tts(text: String, lang: String) -> Result<(), String> {
-    println!("TTS request - Text: '{}', Language: '{}'", text, lang);
+    println!("🎵 [TAURI-TTS] TTS command invoked");
+    println!("🎵 [TAURI-TTS] Text: '{}' (length: {} chars)", text, text.len());
+    println!("🎵 [TAURI-TTS] Language: '{}'", lang);
+    println!("🎵 [TAURI-TTS] Creating TTS engine...");
     
     let tts_engine = TTSEngine::new();
+    
+    println!("🎵 [TAURI-TTS] Calling play_tts on engine...");
+    let start_time = std::time::Instant::now();
+    
     match tts_engine.play_tts(&text, &lang).await {
         Ok(()) => {
-            println!("TTS playback completed successfully");
+            let duration = start_time.elapsed();
+            println!("✅ [TAURI-TTS] TTS playback completed successfully in {:?}", duration);
             Ok(())
         }
         Err(e) => {
-            println!("TTS playback failed: {}", e);
+            let duration = start_time.elapsed();
+            println!("❌ [TAURI-TTS] TTS playback failed after {:?}: {}", duration, e);
             Err(e)
         }
     }
@@ -190,17 +199,25 @@ async fn get_edge_tts_voices() -> Result<HashMap<String, Vec<String>>, String> {
  */
 #[tauri::command]
 async fn test_android_tts(text: String, language: String) -> Result<String, String> {
-    println!("Testing Android TTS - Text: '{}', Language: '{}'", text, language);
+    println!("🧪 [TAURI-TTS-TEST] Testing Android TTS");
+    println!("🧪 [TAURI-TTS-TEST] Text: '{}' (length: {} chars)", text, text.len());
+    println!("🧪 [TAURI-TTS-TEST] Language: '{}'", language);
     
     // Use unified TTS engine for all platforms
     let tts_engine = TTSEngine::new();
+    
+    println!("🧪 [TAURI-TTS-TEST] Calling play_tts on engine...");
+    let start_time = std::time::Instant::now();
+    
     match tts_engine.play_tts(&text, &language).await {
         Ok(()) => {
-            println!("✅ Unified TTS test successful");
+            let duration = start_time.elapsed();
+            println!("✅ [TAURI-TTS-TEST] Unified TTS test successful in {:?}", duration);
             Ok("TTS test completed successfully".to_string())
         }
         Err(e) => {
-            println!("❌ Unified TTS test failed: {}", e);
+            let duration = start_time.elapsed();
+            println!("❌ [TAURI-TTS-TEST] Unified TTS test failed after {:?}: {}", duration, e);
             Err(format!("TTS test failed: {}", e))
         }
     }

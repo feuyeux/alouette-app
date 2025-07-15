@@ -16,7 +16,7 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
   position: relative;
   overflow: hidden;
   user-select: none;
@@ -224,7 +224,7 @@ button:disabled {
 .btn-icon {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .btn-icon-only {
@@ -248,12 +248,12 @@ button:disabled {
 /* ========== Button groups - Twitter style ========== */
 .btn-group {
   display: inline-flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .btn-group-tight {
   display: inline-flex;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
 .btn-group-vertical {

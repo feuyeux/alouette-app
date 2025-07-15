@@ -14,11 +14,18 @@
 /* Application root container */
 #app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-main);
   color: var(--color-gray-700);
   font-family: var(--font-family-primary);
   font-size: var(--font-size-base);
   line-height: var(--line-height-relaxed);
+  margin: 0;
+  padding: 0;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Vue transition animations */
@@ -190,6 +197,41 @@
 }
 
 /* ========== App-specific global styles ========== */
+
+/* Remove bottom spacing and ensure compact layout */
+#app > *:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: var(--spacing-xs) !important;
+}
+
+/* Compact spacing for main content areas */
+.main-content > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Ensure results section doesn't add bottom spacing */
+.results-section:last-child,
+.translation-section:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Global compact layout rules */
+* {
+  margin-bottom: 0;
+}
+
+.main-content {
+  padding-bottom: 0 !important;
+}
+
+/* Responsive compact layout */
+@media (max-width: 768px) {
+  #app {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+}
 
 /* Ensure all text has good contrast */
 ::placeholder {

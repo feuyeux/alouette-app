@@ -1,0 +1,49 @@
+TTS 诊断报告
+===========
+生成时间: Wed Jul  9 13:37:49 CST 2025
+
+系统信息:
+- 操作系统: Darwin M4Pro14C48G.local 24.5.0 Darwin Kernel Version 24.5.0: Tue Apr 22 19:53:27 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T6041 arm64
+- Rust 版本: rustc 1.87.0 (17067e9ac 2025-05-09)
+- 架构: arm64
+
+网络测试:
+- Edge TTS 服务器: HTTP/2 400 
+
+音频设备:
+          Transport: Built-in
+          Input Source: MacBook Pro麦克风
+
+        MacBook Pro扬声器:
+
+          Manufacturer: Apple Inc.
+          Output Channels: 2
+          Current SampleRate: 44100
+          Transport: Built-in
+          Output Source: MacBook Pro扬声器
+
+编译配置:
+- 优化级别: 1 (降低优化以保持 TTS 功能)
+- 调试信息: 保留
+- Panic 处理: unwind (保持完整错误信息)
+- 符号剥离: 禁用
+- LTO: 禁用
+
+依赖版本:
+- Rodio: rodio = { version = "0.17", features = ["symphonia-all"] }
+- Tokio: tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = { version = "0.20", features = ["rustls-tls-webpki-roots"] }
+- Reqwest: reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"], default-features = false }
+
+修复措施:
+1. 降低 release 编译优化级别 (opt-level = 1)
+2. 保留调试信息 (debug = true)
+3. 使用 unwind panic 模式
+4. 增强音频解码器支持 (symphonia-all)
+5. 禁用激进的链接时优化
+
+下一步:
+1. 测试 dev 版本 TTS 功能
+2. 测试修复后的 release 版本 TTS 功能
+3. 比较两者的行为差异
+4. 如果问题仍存在，检查特定的音频驱动或权限问题
