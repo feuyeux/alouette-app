@@ -36,6 +36,19 @@ migrate_working_dir/
 *.dill
 *.track.dill
 
+# Flutter Web
+/web/build/
+
+# Flutter Windows
+/windows/flutter/ephemeral/
+/windows/flutter/generated_plugin_registrant.cc
+/windows/flutter/generated_plugin_registrant.h
+/windows/flutter/generated_plugins.cmake
+
+# Flutter generated files
+**/Generated.xcconfig
+**/flutter_export_environment.sh
+
 # Symbolication related
 app.*.symbols
 
@@ -46,3 +59,25 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Large binary files and caches
+*.so
+*.dylib
+*.framework
+*.app
+*.ipa
+*.apk
+*.aab
+
+# Temporary binary files
+*.tmp
+*.temp
+*.cache
+
+# Plugin generated files
+**/ephemeral/
+**/.plugin_symlinks/
+
+# Coverage and test files
+coverage/
+test/coverage/
