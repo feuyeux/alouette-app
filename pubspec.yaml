@@ -1,0 +1,50 @@
+name: alouette_app
+description: "Alouette App - Combined translation and text-to-speech Flutter application."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+
+  # HTTP client for API calls
+  http: ^1.1.0
+
+  # Flutter Text-to-Speech plugin
+  flutter_tts: ^4.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  # App-level assets (can add a unified icon later)
+  assets:
+    - assets/icons/
+
+# (Optional) unified launcher icon config placeholder – run flutter pub run flutter_launcher_icons once icon provided
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/alouette_rounded.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/icons/alouette_rounded.png"
+  windows:
+    generate: true
+    image_path: "assets/icons/alouette_rounded.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/icons/alouette_rounded.png"
