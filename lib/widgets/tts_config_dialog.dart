@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/tts_service.dart';
+import 'package:alouette_lib_tts/alouette_lib_tts.dart';
 import '../constants/app_constants.dart';
 
 class TTSConfigDialog extends StatefulWidget {
@@ -19,8 +19,7 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
   double _volume = AppConstants.defaultVolume;
   double _pitch = AppConstants.defaultPitch;
   bool _isInitialized = false;
-  List<String> _availableLanguages = [];
-  String _selectedLanguage = 'en-US';
+  final String _selectedLanguage = 'en-US';
 
   @override
   void initState() {
@@ -32,17 +31,16 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
     if (widget.ttsService != null) {
       try {
         // 获取当前TTS设置
-        final currentRate = await widget.ttsService!.getSpeechRate();
-        final currentVolume = await widget.ttsService!.getVolume();
-        final currentPitch = await widget.ttsService!.getPitch();
-        final languages = await widget.ttsService!.getLanguages();
+        final currentRate = widget.ttsService!.getSpeechRate();
+        final currentVolume = widget.ttsService!.getVolume();
+        final currentPitch = widget.ttsService!.getPitch();
+        await widget.ttsService!.getLanguages();
         
         if (mounted) {
           setState(() {
-            _speechRate = currentRate ?? AppConstants.defaultSpeechRate;
-            _volume = currentVolume ?? AppConstants.defaultVolume;
-            _pitch = currentPitch ?? AppConstants.defaultPitch;
-            _availableLanguages = languages;
+            _speechRate = currentRate;
+            _volume = currentVolume;
+            _pitch = currentPitch;
             _isInitialized = true;
           });
         }

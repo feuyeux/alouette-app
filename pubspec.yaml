@@ -14,11 +14,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
-  # HTTP client for API calls
-  http: ^1.1.0
-
-  # Flutter Text-to-Speech plugin
-  flutter_tts: ^4.2.3
+  # Alouette libraries
+  alouette_lib_tts:
+    path: ../alouette-lib-tts
+  alouette_lib_trans:
+    path: ../alouette-lib-trans
 
 dev_dependencies:
   flutter_test:

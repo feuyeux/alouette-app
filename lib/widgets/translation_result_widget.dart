@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:alouette_lib_tts/alouette_lib_tts.dart';
 import '../services/translation_service.dart';
-import '../services/tts_service.dart';
 import '../models/app_models.dart';
-import '../constants/app_constants.dart';
+
 
 class TranslationResultWidget extends StatefulWidget {
   final TranslationService translationService;
@@ -113,9 +113,9 @@ Future<void> _playTTS(String language, String text) async {
 
   try {
     // 获取当前TTS配置，如果获取失败则使用默认值
-    final speechRate = await widget.ttsService!.getSpeechRate() ?? AppConstants.defaultSpeechRate;
-    final volume = await widget.ttsService!.getVolume() ?? AppConstants.defaultVolume;
-    final pitch = await widget.ttsService!.getPitch() ?? AppConstants.defaultPitch;
+    final speechRate = widget.ttsService!.getSpeechRate();
+    final volume = widget.ttsService!.getVolume();
+    final pitch = widget.ttsService!.getPitch();
     
     // 获取语言代码并直接播放
     final languageCode = _getLanguageCode(language);

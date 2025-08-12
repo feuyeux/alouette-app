@@ -1,130 +1,57 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../models/app_models.dart';
+import 'package:alouette_lib_trans/alouette_lib_trans.dart' as trans_lib;
 
-/// LLM 配置服务，处理与 Ollama 和 LM Studio 的连接
+/// LLM 配置服务，处理与 Ollama 和 LM Studio 的连接 - 使用 alouette-lib-trans 库
 class LLMConfigService {
-  List<String> _availableModels = [];
-  ConnectionStatus? _connectionStatus;
-  bool _isTestingConnection = false;
-
-  List<String> get availableModels => _availableModels;
-  ConnectionStatus? get connectionStatus => _connectionStatus;
-  bool get isTestingConnection => _isTestingConnection;
+  final trans_lib.LLMConfigService _llmConfigService = trans_lib.LLMConfigService();
 
   /// 测试与 LLM 提供者的连接
-  Future<Map<String, dynamic>> testConnection(LLMConfig config) async {
-    if (_isTestingConnection) {
-      return {
-        'success': false,
-        'message': 'Connection test is already in progress',
-      };
-    }
-
-    _isTestingConnection = true;
+  Future<Map<String, dynamic>> testConnection(trans_lib.LLMConfig config) async {
     try {
-      print('Testing connection to ${config.provider}...');
-
-      List<String> models;
-      switch (config.provider) {
-        case 'ollama':
-          models = await _connectOllama(config.serverUrl);
-          break;
-        case 'lmstudio':
-          models = await _connectLMStudio(config.serverUrl, config.apiKey);
-          break;
-        default:
-          throw Exception('Unsupported provider: ${config.provider}');
+      final connectionStatus = await _llmConfigService.testConnection(config);
+      
+      if (connectionStatus.success) {
+        final models = await _llmConfigService.getAvailableModels(config);
+        return {
+          'success': true,
+          'message': connectionStatus.message,
+          'models': models,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': connectionStatus.message,
+        };
       }
-
-      _availableModels = models;
-      _connectionStatus = ConnectionStatus(
-        success: true,
-        message: 'Successfully connected to ${config.provider}',
-        modelCount: models.length,
-        timestamp: DateTime.now(),
-      );
-
-      return {
-        'success': true,
-        'message': 'Connected successfully. Found ${models.length} models.',
-        'models': models,
-      };
     } catch (error) {
-      _connectionStatus = ConnectionStatus(
-        success: false,
-        message: 'Failed to connect: $error',
-        timestamp: DateTime.now(),
-      );
-
       return {
         'success': false,
         'message': error.toString(),
       };
-    } finally {
-      _isTestingConnection = false;
     }
   }
 
-  /// 连接到 Ollama
-  Future<List<String>> _connectOllama(String serverUrl) async {
-    final url = Uri.parse('$serverUrl/api/tags');
-    
-    final response = await http.get(url).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () => throw Exception('Connection timeout'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final models = data['models'] as List?;
-      
-      if (models != null) {
-        return models.map((model) => model['name'].toString()).toList();
-      } else {
-        throw Exception('No models found in response');
-      }
-    } else {
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
-    }
+  /// 获取可用模型列表
+  Future<List<String>> getAvailableModels(trans_lib.LLMConfig config) async {
+    return await _llmConfigService.getAvailableModels(config);
   }
 
-  /// 连接到 LM Studio
-  Future<List<String>> _connectLMStudio(String serverUrl, String? apiKey) async {
-    final url = Uri.parse('$serverUrl/v1/models');
-    
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
-    
-    if (apiKey != null && apiKey.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $apiKey';
-    }
-
-    final response = await http.get(url, headers: headers).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () => throw Exception('Connection timeout'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final models = data['data'] as List?;
-      
-      if (models != null) {
-        return models.map((model) => model['id'].toString()).toList();
-      } else {
-        throw Exception('No models found in response');
-      }
-    } else if (response.statusCode == 401) {
-      throw Exception('Authentication failed. Please check your API key.');
-    } else {
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
-    }
+  /// 测试连接状态
+  Future<trans_lib.ConnectionStatus> getConnectionStatus(trans_lib.LLMConfig config) async {
+    return await _llmConfigService.testConnection(config);
   }
 
-  /// 清除连接状态
-  void clearConnectionStatus() {
-    _connectionStatus = null;
-    _availableModels.clear();
+  /// 保存配置
+  Future<void> saveConfig(trans_lib.LLMConfig config) async {
+    await _llmConfigService.saveConfig(config);
+  }
+
+  /// 加载配置
+  Future<trans_lib.LLMConfig?> loadConfig() async {
+    return await _llmConfigService.loadConfig();
+  }
+
+  /// 自动检测配置
+  Future<trans_lib.LLMConfig?> autoDetectConfig() async {
+    return await _llmConfigService.autoDetectConfig();
   }
 }

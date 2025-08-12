@@ -25,6 +25,7 @@ class _LLMConfigDialogState extends State<LLMConfigDialog> {
   bool _isTestingConnection = false;
   String? _connectionMessage;
   bool _connectionSuccess = false;
+  List<String> _availableModels = [];
 
   @override
   void initState() {
@@ -34,11 +35,8 @@ class _LLMConfigDialogState extends State<LLMConfigDialog> {
     _apiKeyController = TextEditingController(text: widget.initialConfig.apiKey ?? '');
     _selectedModel = widget.initialConfig.selectedModel;
 
-    // 如果已经有可用模型，标记连接成功
-    if (widget.llmConfigService.availableModels.isNotEmpty) {
-      _connectionSuccess = true;
-      _connectionMessage = 'Connected. ${widget.llmConfigService.availableModels.length} models available.';
-    }
+    // Try to load available models if already configured
+    _loadAvailableModels();
   }
 
   @override
@@ -46,6 +44,29 @@ class _LLMConfigDialogState extends State<LLMConfigDialog> {
     _serverUrlController.dispose();
     _apiKeyController.dispose();
     super.dispose();
+  }
+
+  /// Load available models for the current configuration
+  Future<void> _loadAvailableModels() async {
+    try {
+      final config = LLMConfig(
+        provider: widget.initialConfig.provider,
+        serverUrl: widget.initialConfig.serverUrl,
+        apiKey: widget.initialConfig.apiKey,
+        selectedModel: '',
+      );
+      
+      final models = await widget.llmConfigService.getAvailableModels(config);
+      if (mounted && models.isNotEmpty) {
+        setState(() {
+          _availableModels = models;
+          _connectionSuccess = true;
+          _connectionMessage = 'Connected. ${models.length} models available.';
+        });
+      }
+    } catch (e) {
+      // Silently fail - user can test connection manually
+    }
   }
 
   /// 测试连接
@@ -71,9 +92,12 @@ class _LLMConfigDialogState extends State<LLMConfigDialog> {
       setState(() {
         _connectionSuccess = result['success'];
         _connectionMessage = result['message'];
-        if (_connectionSuccess && widget.llmConfigService.availableModels.isNotEmpty) {
-          // 自动选择第一个可用模型
-          _selectedModel = widget.llmConfigService.availableModels.first;
+        if (_connectionSuccess && result['models'] != null) {
+          _availableModels = List<String>.from(result['models']);
+          if (_availableModels.isNotEmpty) {
+            // 自动选择第一个可用模型
+            _selectedModel = _availableModels.first;
+          }
         }
       });
     } catch (error) {
@@ -257,7 +281,7 @@ class _LLMConfigDialogState extends State<LLMConfigDialog> {
               ],
               
               // Model Selection
-              if (_connectionSuccess && widget.llmConfigService.availableModels.isNotEmpty) ...[
+              if (_connectionSuccess && _availableModels.isNotEmpty) ...[
                 Text(
                   'Model',
                   style: Theme.of(context).textTheme.labelLarge,
@@ -265,7 +289,7 @@ class _LLMConfigDialogState extends State<LLMConfigDialog> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _selectedModel.isEmpty ? null : _selectedModel,
-                  items: widget.llmConfigService.availableModels.map((model) {
+                  items: _availableModels.map((model) {
                     return DropdownMenuItem(
                       value: model,
                       child: Text(

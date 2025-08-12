@@ -1,6 +1,6 @@
 # Alouette App
 
-A unified Flutter application that combines AI-powered translation with integrated text-to-speech functionality.
+A unified Flutter application that combines AI-powered translation with integrated text-to-speech functionality. Built using the [alouette-lib-trans](../alouette-lib-trans) and [alouette-lib-tts](../alouette-lib-tts) libraries for consistent functionality across the Alouette ecosystem.
 
 ## Features
 
@@ -82,21 +82,27 @@ The application supports various language models compatible with Ollama and LM S
 
 ## Architecture
 
+This application uses the Alouette library ecosystem for core functionality:
+
+### Dependencies
+- **[alouette-lib-trans](../alouette-lib-trans)**: AI translation functionality with support for Ollama and LM Studio
+- **[alouette-lib-tts](../alouette-lib-tts)**: Text-to-speech functionality with multi-platform support
+
+### Application Structure
 ```
 lib/
 ├── main.dart                           # Application entry point
 ├── constants/
 │   └── app_constants.dart              # Application constants and language mappings
 ├── models/
-│   └── app_models.dart                 # Data models (LLM config, translation results)
+│   └── app_models.dart                 # Re-exports from alouette libraries
 ├── pages/
 │   ├── app_home_page.dart              # Main application page
 │   └── translation_page.dart           # Translation page with integrated TTS
-├── services/
-│   ├── auto_config_service.dart        # Auto-configuration service
-│   ├── llm_config_service.dart         # LLM configuration service
-│   ├── translation_service.dart        # Translation service
-│   └── tts_service.dart                # Text-to-Speech service
+├── services/                           # Service wrappers for library integration
+│   ├── auto_config_service.dart        # Auto-configuration service wrapper
+│   ├── llm_config_service.dart         # LLM configuration service wrapper
+│   └── translation_service.dart        # Translation service wrapper
 └── widgets/
     ├── llm_config_dialog.dart          # LLM configuration dialog
     ├── translation_input_widget.dart   # Translation input component
@@ -161,8 +167,13 @@ flutter build linux --release
 
 ## Related Projects
 
+### Applications
 - [alouette-translator](../alouette-translator): Standalone translation application
 - [alouette-tts](../alouette-tts): Standalone text-to-speech application
+
+### Libraries
+- [alouette-lib-trans](../alouette-lib-trans): AI translation library
+- [alouette-lib-tts](../alouette-lib-tts): Text-to-speech library
 
 ## License
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:alouette_lib_tts/alouette_lib_tts.dart';
 import '../models/app_models.dart';
 import '../services/llm_config_service.dart';
 import '../services/translation_service.dart';
 import '../services/auto_config_service.dart';
-import '../services/tts_service.dart';
 import '../widgets/llm_config_dialog.dart';
 import '../widgets/tts_config_dialog.dart';
 import '../widgets/translation_input_widget.dart';
@@ -76,7 +76,7 @@ class _TranslationPageState extends State<TranslationPage> {
         _isTTSInitialized = true;
       });
     } catch (error) {
-      print('Failed to initialize TTS: $error');
+      debugPrint('Failed to initialize TTS: $error');
     }
   }
 
