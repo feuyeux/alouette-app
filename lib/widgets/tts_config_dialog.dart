@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:alouette_lib_tts/alouette_lib_tts.dart';
+import 'package:alouette_lib_tts/alouette_tts.dart';
 import '../constants/app_constants.dart';
 
 class TTSConfigDialog extends StatefulWidget {
-  final TTSService? ttsService;
+  final AlouetteTTSService? ttsService;
 
-  const TTSConfigDialog({
-    super.key,
-    this.ttsService,
-  });
+  const TTSConfigDialog({super.key, this.ttsService});
 
   @override
   State<TTSConfigDialog> createState() => _TTSConfigDialogState();
@@ -19,7 +16,9 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
   double _volume = AppConstants.defaultVolume;
   double _pitch = AppConstants.defaultPitch;
   bool _isInitialized = false;
-  final String _selectedLanguage = 'en-US';
+  String _selectedLanguage = 'en-US';
+  String? _selectedVoiceId;
+  Map<String, dynamic>? _engineInfo;
 
   @override
   void initState() {
@@ -30,17 +29,20 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
   Future<void> _initializeTTSSettings() async {
     if (widget.ttsService != null) {
       try {
-        // 获取当前TTS设置
-        final currentRate = widget.ttsService!.getSpeechRate();
-        final currentVolume = widget.ttsService!.getVolume();
-        final currentPitch = widget.ttsService!.getPitch();
-        await widget.ttsService!.getLanguages();
-        
+        // 获取当前TTS配置
+        final currentConfig = widget.ttsService!.currentConfig;
+
+        // 获取TTS引擎信息
+        final engineInfo = widget.ttsService!.getTTSEngineInfo();
+
         if (mounted) {
           setState(() {
-            _speechRate = currentRate;
-            _volume = currentVolume;
-            _pitch = currentPitch;
+            _speechRate = currentConfig.speechRate;
+            _volume = currentConfig.volume;
+            _pitch = currentConfig.pitch;
+            _selectedLanguage = currentConfig.languageCode;
+            _selectedVoiceId = currentConfig.voiceName;
+            _engineInfo = engineInfo;
             _isInitialized = true;
           });
         }
@@ -60,14 +62,19 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
 
   Future<void> _testTTS() async {
     if (widget.ttsService == null) return;
-    
+
     try {
-      await widget.ttsService!.speak(
-        text: "Hello, this is a test of the text to speech settings.",
-        languageCode: _selectedLanguage,
+      final config = AlouetteTTSConfig(
         speechRate: _speechRate,
         volume: _volume,
         pitch: _pitch,
+        languageCode: _selectedLanguage,
+        voiceName: _selectedVoiceId,
+      );
+
+      await widget.ttsService!.speak(
+        "Hello, this is a test of the text to speech settings.",
+        config: config,
       );
     } catch (e) {
       if (mounted) {
@@ -92,194 +99,270 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
       _volume = AppConstants.defaultVolume;
       _pitch = AppConstants.defaultPitch;
     });
-    
-    // 应用设置到TTS服务
+
+    // 应用默认配置到TTS服务
     if (widget.ttsService != null) {
-      await widget.ttsService!.setSpeechRate(_speechRate);
-      await widget.ttsService!.setVolume(_volume);
-      await widget.ttsService!.setPitch(_pitch);
+      final defaultConfig = AlouetteTTSConfig(
+        speechRate: _speechRate,
+        volume: _volume,
+        pitch: _pitch,
+        languageCode: _selectedLanguage,
+        voiceName: _selectedVoiceId,
+      );
+      await widget.ttsService!.updateConfig(defaultConfig);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxDialogHeight = screenHeight * 0.85; // 最大高度为屏幕的85%
+
     return Dialog(
       child: Container(
         width: 500,
-        padding: const EdgeInsets.all(24.0),
+        height: maxDialogHeight,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 标题
-            Row(
-              children: [
-                const Icon(Icons.record_voice_over, size: 24),
-                const SizedBox(width: 12),
-                Text(
-                  'TTS Configuration',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Close',
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            
-            if (!_isInitialized)
-              const Center(
-                child: CircularProgressIndicator(),
-              )
-            else ...[
-              // TTS状态
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: widget.ttsService != null 
-                    ? Colors.green.shade50 
-                    : Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: widget.ttsService != null 
-                      ? Colors.green.shade200 
-                      : Colors.orange.shade200,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      widget.ttsService != null 
-                        ? Icons.check_circle 
-                        : Icons.warning,
-                      color: widget.ttsService != null 
-                        ? Colors.green.shade600 
-                        : Colors.orange.shade600,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.ttsService != null 
-                        ? 'TTS Service Available'
-                        : 'TTS Service Not Available',
-                      style: TextStyle(
-                        color: widget.ttsService != null 
-                          ? Colors.green.shade800 
-                          : Colors.orange.shade800,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // 语音速度
-              _buildSliderSetting(
-                'Speech Rate',
-                _speechRate,
-                0.1,
-                2.0,
-                (value) async {
-                  setState(() => _speechRate = value);
-                  if (widget.ttsService != null) {
-                    await widget.ttsService!.setSpeechRate(value);
-                  }
-                },
-                Icons.speed,
-                '${_speechRate.toStringAsFixed(1)}x',
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // 音量
-              _buildSliderSetting(
-                'Volume',
-                _volume,
-                0.0,
-                1.0,
-                (value) async {
-                  setState(() => _volume = value);
-                  if (widget.ttsService != null) {
-                    await widget.ttsService!.setVolume(value);
-                  }
-                },
-                Icons.volume_up,
-                '${(_volume * 100).toInt()}%',
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // 音调
-              _buildSliderSetting(
-                'Pitch',
-                _pitch,
-                0.5,
-                2.0,
-                (value) async {
-                  setState(() => _pitch = value);
-                  if (widget.ttsService != null) {
-                    await widget.ttsService!.setPitch(value);
-                  }
-                },
-                Icons.tune,
-                _pitch.toStringAsFixed(1),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // 测试和控制按钮
-              Row(
+            // 固定的标题栏
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Row(
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: widget.ttsService != null ? _testTTS : null,
-                    icon: const Icon(Icons.play_arrow, size: 18),
-                    label: const Text('Test'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
+                  const Icon(Icons.record_voice_over, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    'TTS Configuration',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  
-                  const SizedBox(width: 8),
-                  
-                  ElevatedButton.icon(
-                    onPressed: widget.ttsService != null ? _stopTTS : null,
-                    icon: const Icon(Icons.stop, size: 18),
-                    label: const Text('Stop'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 8),
-                  
-                  TextButton.icon(
-                    onPressed: _resetToDefaults,
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Reset'),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Close',
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 16),
-              
-              // 说明文本
-              Text(
-                'Note: These settings will apply to all TTS playback in the application.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade600,
-                  fontStyle: FontStyle.italic,
+            ),
+
+            // 可滚动的内容区域
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!_isInitialized)
+                      const Center(child: CircularProgressIndicator())
+                    else ...[
+                      // TTS状态
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: widget.ttsService != null
+                              ? Colors.green.shade50
+                              : Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: widget.ttsService != null
+                                ? Colors.green.shade200
+                                : Colors.orange.shade200,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              widget.ttsService != null
+                                  ? Icons.check_circle
+                                  : Icons.warning,
+                              color: widget.ttsService != null
+                                  ? Colors.green.shade600
+                                  : Colors.orange.shade600,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.ttsService != null
+                                  ? 'TTS Service Available'
+                                  : 'TTS Service Not Available',
+                              style: TextStyle(
+                                color: widget.ttsService != null
+                                    ? Colors.green.shade800
+                                    : Colors.orange.shade800,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // TTS引擎信息
+                      if (_engineInfo != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.settings_voice,
+                                    color: Colors.blue.shade600,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'TTS Engine Information',
+                                    style: TextStyle(
+                                      color: Colors.blue.shade800,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              _buildEngineInfoRow(
+                                'Engine',
+                                _engineInfo!['engineName'] ?? 'Unknown',
+                              ),
+                              _buildEngineInfoRow(
+                                'Type',
+                                _engineInfo!['engineType'] ?? 'Unknown',
+                              ),
+                              _buildEngineInfoRow(
+                                'Platform',
+                                _engineInfo!['platform'] ?? 'Unknown',
+                              ),
+                              if (_engineInfo!['description'] != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    _engineInfo!['description'],
+                                    style: TextStyle(
+                                      color: Colors.blue.shade700,
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // 语音速度
+                      _buildSliderSetting(
+                        'Speech Rate',
+                        _speechRate,
+                        0.1,
+                        2.0,
+                        (value) async {
+                          setState(() => _speechRate = value);
+                          if (widget.ttsService != null) {
+                            final config = AlouetteTTSConfig(
+                              speechRate: value,
+                              volume: _volume,
+                              pitch: _pitch,
+                              languageCode: _selectedLanguage,
+                              voiceName: _selectedVoiceId,
+                            );
+                            await widget.ttsService!.updateConfig(config);
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // 音量
+                      _buildSliderSetting('Volume', _volume, 0.0, 1.0, (
+                        value,
+                      ) async {
+                        setState(() => _volume = value);
+                        if (widget.ttsService != null) {
+                          final config = AlouetteTTSConfig(
+                            speechRate: _speechRate,
+                            volume: value,
+                            pitch: _pitch,
+                            languageCode: _selectedLanguage,
+                            voiceName: _selectedVoiceId,
+                          );
+                          await widget.ttsService!.updateConfig(config);
+                        }
+                      }),
+
+                      const SizedBox(height: 16),
+
+                      // 音调
+                      _buildSliderSetting('Pitch', _pitch, 0.5, 2.0, (
+                        value,
+                      ) async {
+                        setState(() => _pitch = value);
+                        if (widget.ttsService != null) {
+                          final config = AlouetteTTSConfig(
+                            speechRate: _speechRate,
+                            volume: _volume,
+                            pitch: value,
+                            languageCode: _selectedLanguage,
+                            voiceName: _selectedVoiceId,
+                          );
+                          await widget.ttsService!.updateConfig(config);
+                        }
+                      }),
+
+                      const SizedBox(height: 24),
+
+                      // 操作按钮
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: widget.ttsService != null
+                                ? _testTTS
+                                : null,
+                            icon: const Icon(Icons.play_arrow),
+                            label: const Text('Test'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: widget.ttsService != null
+                                ? _stopTTS
+                                : null,
+                            icon: const Icon(Icons.stop),
+                            label: const Text('Stop'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: _resetToDefaults,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Reset'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -292,9 +375,28 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
     double min,
     double max,
     ValueChanged<double> onChanged,
-    IconData icon,
-    String displayValue,
   ) {
+    String displayValue;
+    IconData icon;
+
+    switch (title) {
+      case 'Speech Rate':
+        displayValue = '${value.toStringAsFixed(1)}x';
+        icon = Icons.speed;
+        break;
+      case 'Volume':
+        displayValue = '${(value * 100).round()}%';
+        icon = Icons.volume_up;
+        break;
+      case 'Pitch':
+        displayValue = '${value.toStringAsFixed(1)}x';
+        icon = Icons.graphic_eq;
+        break;
+      default:
+        displayValue = value.toStringAsFixed(2);
+        icon = Icons.tune;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -304,9 +406,9 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
             const SizedBox(width: 8),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
             ),
             const Spacer(),
             Container(
@@ -335,6 +437,38 @@ class _TTSConfigDialogState extends State<TTSConfigDialog> {
           onChanged: onChanged,
         ),
       ],
+    );
+  }
+
+  Widget _buildEngineInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                color: Colors.blue.shade700,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.blue.shade800,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:alouette_lib_tts/alouette_lib_tts.dart';
+import 'package:alouette_lib_tts/alouette_tts.dart';
 import '../models/app_models.dart';
 import '../services/llm_config_service.dart';
 import '../services/translation_service.dart';
@@ -21,7 +21,7 @@ class _TranslationPageState extends State<TranslationPage> {
   final LLMConfigService _llmConfigService = LLMConfigService();
   final TranslationService _translationService = TranslationService();
   final AutoConfigService _autoConfigService = AutoConfigService();
-  final TTSService _ttsService = TTSService();
+  final AlouetteTTSService _ttsService = AlouetteTTSService();
 
   LLMConfig _llmConfig = const LLMConfig(
     provider: 'ollama',
@@ -47,21 +47,25 @@ class _TranslationPageState extends State<TranslationPage> {
   @override
   void dispose() {
     _textController.dispose();
-    _ttsService.dispose();
+    // AlouetteTTSService 不需要手动dispose
     super.dispose();
   }
 
   /// 初始化TTS服务
   Future<void> _initializeTTS() async {
     try {
+      debugPrint('TTS: Starting initialization...');
       await _ttsService.initialize(
         onStart: () {
           // TTS开始播放时的回调
+          debugPrint('TTS: Started playing');
         },
         onComplete: () {
           // TTS播放完成时的回调
+          debugPrint('TTS: Completed playing');
         },
         onError: (message) {
+          debugPrint('TTS Error in callback: $message');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -71,12 +75,30 @@ class _TranslationPageState extends State<TranslationPage> {
             );
           }
         },
+        config: AlouetteTTSConfig.defaultConfig(),
       );
       setState(() {
         _isTTSInitialized = true;
       });
+      debugPrint('TTS: Successfully initialized');
     } catch (error) {
       debugPrint('Failed to initialize TTS: $error');
+      debugPrint('TTS Error Type: ${error.runtimeType}');
+      if (error is Exception) {
+        debugPrint('TTS Error toString: ${error.toString()}');
+      }
+      setState(() {
+        _isTTSInitialized = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('TTS initialization failed: $error'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -97,13 +119,16 @@ class _TranslationPageState extends State<TranslationPage> {
             _llmConfig = autoConfig;
             _isConfigured = true;
             _isAutoConfiguring = false;
-            _autoConfigStatus = 'Successfully connected to ${autoConfig.selectedModel}';
+            _autoConfigStatus =
+                'Successfully connected to ${autoConfig.selectedModel}';
           });
-          
+
           // 显示成功消息
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Auto-configured with model: ${autoConfig.selectedModel}'),
+              content: Text(
+                'Auto-configured with model: ${autoConfig.selectedModel}',
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 3),
             ),
@@ -111,7 +136,8 @@ class _TranslationPageState extends State<TranslationPage> {
         } else {
           setState(() {
             _isAutoConfiguring = false;
-            _autoConfigStatus = 'Auto-configuration failed. Please configure manually.';
+            _autoConfigStatus =
+                'Auto-configuration failed. Please configure manually.';
           });
         }
       }
@@ -147,9 +173,8 @@ class _TranslationPageState extends State<TranslationPage> {
   Future<void> _showTTSConfigDialog() async {
     await showDialog(
       context: context,
-      builder: (context) => TTSConfigDialog(
-        ttsService: _isTTSInitialized ? _ttsService : null,
-      ),
+      builder: (context) =>
+          TTSConfigDialog(ttsService: _isTTSInitialized ? _ttsService : null),
     );
   }
 
@@ -191,7 +216,7 @@ class _TranslationPageState extends State<TranslationPage> {
         _selectedLanguages,
         _llmConfig,
       );
-      
+
       setState(() {
         // 触发UI更新以显示翻译结果
       });
@@ -214,7 +239,7 @@ class _TranslationPageState extends State<TranslationPage> {
       children: [
         // 配置状态栏
         _buildConfigurationStatus(),
-        
+
         // 主要内容区域
         Expanded(
           child: Padding(
@@ -231,9 +256,9 @@ class _TranslationPageState extends State<TranslationPage> {
                     isTranslating: _translationService.isTranslating,
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // 翻译结果区域 - 占用剩余空间
                 Expanded(
                   child: TranslationResultWidget(
@@ -245,7 +270,7 @@ class _TranslationPageState extends State<TranslationPage> {
             ),
           ),
         ),
-        
+
         // 配置按钮区域
         Container(
           padding: const EdgeInsets.all(16.0),
@@ -257,20 +282,30 @@ class _TranslationPageState extends State<TranslationPage> {
                 icon: const Icon(Icons.record_voice_over, size: 18),
                 label: const Text('TTS Settings'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  backgroundColor: _isTTSInitialized ? null : Colors.grey.shade300,
-                  foregroundColor: _isTTSInitialized ? null : Colors.grey.shade600,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  backgroundColor: _isTTSInitialized
+                      ? null
+                      : Colors.grey.shade300,
+                  foregroundColor: _isTTSInitialized
+                      ? null
+                      : Colors.grey.shade600,
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               ElevatedButton.icon(
                 onPressed: _showConfigDialog,
                 icon: const Icon(Icons.settings, size: 18),
                 label: const Text('LLM Settings'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
               ),
             ],
@@ -289,7 +324,9 @@ class _TranslationPageState extends State<TranslationPage> {
         color: _isConfigured ? Colors.green.shade50 : Colors.orange.shade50,
         border: Border(
           bottom: BorderSide(
-            color: _isConfigured ? Colors.green.shade200 : Colors.orange.shade200,
+            color: _isConfigured
+                ? Colors.green.shade200
+                : Colors.orange.shade200,
           ),
         ),
       ),
@@ -297,19 +334,23 @@ class _TranslationPageState extends State<TranslationPage> {
         children: [
           Icon(
             _isConfigured ? Icons.check_circle : Icons.warning,
-            color: _isConfigured ? Colors.green.shade600 : Colors.orange.shade600,
+            color: _isConfigured
+                ? Colors.green.shade600
+                : Colors.orange.shade600,
             size: 20,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              _isAutoConfiguring 
+              _isAutoConfiguring
                   ? _autoConfigStatus
-                  : _isConfigured 
-                      ? 'Model: ${_llmConfig.selectedModel} (${_llmConfig.provider})'
-                      : 'LLM not configured. Please click the settings button.',
+                  : _isConfigured
+                  ? 'Model: ${_llmConfig.selectedModel} (${_llmConfig.provider})'
+                  : 'LLM not configured. Please click the settings button.',
               style: TextStyle(
-                color: _isConfigured ? Colors.green.shade800 : Colors.orange.shade800,
+                color: _isConfigured
+                    ? Colors.green.shade800
+                    : Colors.orange.shade800,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -321,7 +362,9 @@ class _TranslationPageState extends State<TranslationPage> {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Colors.orange.shade600,
+                ),
               ),
             ),
         ],

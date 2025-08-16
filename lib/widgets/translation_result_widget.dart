@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:alouette_lib_tts/alouette_lib_tts.dart';
+import 'package:alouette_lib_tts/alouette_tts.dart';
 import '../services/translation_service.dart';
 import '../models/app_models.dart';
 
-
 class TranslationResultWidget extends StatefulWidget {
   final TranslationService translationService;
-  final TTSService? ttsService;
+  final AlouetteTTSService? ttsService;
 
   const TranslationResultWidget({
     super.key,
@@ -16,7 +15,8 @@ class TranslationResultWidget extends StatefulWidget {
   });
 
   @override
-  State<TranslationResultWidget> createState() => _TranslationResultWidgetState();
+  State<TranslationResultWidget> createState() =>
+      _TranslationResultWidgetState();
 }
 
 class _TranslationResultWidgetState extends State<TranslationResultWidget> {
@@ -25,33 +25,23 @@ class _TranslationResultWidgetState extends State<TranslationResultWidget> {
   @override
   Widget build(BuildContext context) {
     final translation = widget.translationService.currentTranslation;
-    
+
     if (translation == null) {
       return Card(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.translate,
-                size: 48,
-                color: Colors.grey.shade400,
-              ),
+              Icon(Icons.translate, size: 48, color: Colors.grey.shade400),
               const SizedBox(height: 16),
               Text(
                 'Translation results will appear here',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 8),
               Text(
                 'Enter text and select languages to get started',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade500,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
               ),
             ],
           ),
@@ -62,122 +52,128 @@ class _TranslationResultWidgetState extends State<TranslationResultWidget> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题和操作按钮
-            Row(
-              children: [
-                const Icon(Icons.translate, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Translation Results',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题和操作按钮
+              Row(
+                children: [
+                  const Icon(Icons.translate, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Translation Results',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                _buildActionButtons(context, translation),
-              ],
-            ),
-            
-            const SizedBox(height: 8),
-            
-            // 元数据
-            _buildMetadata(context, translation),
-            
-            const SizedBox(height: 16),
-            
-            // 原文
-            _buildOriginalText(context, translation),
-            
-            const SizedBox(height: 16),
-            
-            // 翻译结果
-            Expanded(
-            child: _buildTranslations(context, translation),
+                  const Spacer(),
+                  _buildActionButtons(context, translation),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // 元数据
+              _buildMetadata(context, translation),
+
+              const SizedBox(height: 16),
+
+              // 原文
+              _buildOriginalText(context, translation),
+
+              const SizedBox(height: 16),
+
+              // 翻译结果
+              _buildTranslations(context, translation),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// 播放TTS
-Future<void> _playTTS(String language, String text) async {
-  if (widget.ttsService == null) return;
-
-  setState(() {
-    _playingStates[language] = true;
-  });
-
-  try {
-    // 获取当前TTS配置，如果获取失败则使用默认值
-    final speechRate = widget.ttsService!.getSpeechRate();
-    final volume = widget.ttsService!.getVolume();
-    final pitch = widget.ttsService!.getPitch();
-    
-    // 获取语言代码并直接播放
-    final languageCode = _getLanguageCode(language);
-    if (languageCode == null) return;
-    
-    await widget.ttsService!.speak(
-      text: text,
-      languageCode: languageCode,
-      speechRate: speechRate,
-      volume: volume,
-      pitch: pitch,
-    );
-    
-  } catch (error) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('TTS Error for $language: $error'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
         ),
+      ),
+    );
+  }
+
+  /// 播放TTS
+  Future<void> _playTTS(String language, String text) async {
+    if (widget.ttsService == null) return;
+
+    setState(() {
+      _playingStates[language] = true;
+    });
+
+    try {
+      // 获取当前TTS配置
+      final currentConfig = widget.ttsService!.currentConfig;
+
+      // 获取语言代码并直接播放
+      final languageCode = _getLanguageCode(language);
+      if (languageCode == null) return;
+
+      // 创建配置并播放
+      final config = AlouetteTTSConfig(
+        speechRate: currentConfig.speechRate,
+        volume: currentConfig.volume,
+        pitch: currentConfig.pitch,
+        languageCode: languageCode,
+        voiceName: currentConfig.voiceName,
       );
-    }
-  } finally {
-    if (mounted) {
-      setState(() {
-        _playingStates[language] = false;
-      });
+
+      await widget.ttsService!.speak(text, config: config);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('TTS Error for $language: $error'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _playingStates[language] = false;
+        });
+      }
     }
   }
-}
 
-/// 停止TTS
-Future<void> _stopTTS(String language) async {
-  if (widget.ttsService == null) return;
-  
-  await widget.ttsService!.stop();
-  setState(() {
-    _playingStates[language] = false;
-  });
-}
+  /// 停止TTS
+  Future<void> _stopTTS(String language) async {
+    if (widget.ttsService == null) return;
 
-/// 根据语言名称获取语言代码
-String? _getLanguageCode(String languageName) {
-  // 将翻译用的语言名称映射到TTS语言代码
-  final mapping = {
-    'Chinese': 'zh-CN',
-    'English': 'en-US',
-    'Japanese': 'ja-JP',
-    'Korean': 'ko-KR',
-    'French': 'fr-FR',
-    'German': 'de-DE',
-    'Spanish': 'es-ES',
-    'Italian': 'it-IT',
-    'Russian': 'ru-RU',
-    'Arabic': 'ar-SA',
-    'Hindi': 'hi-IN',
-    'Greek': 'el-GR',
-  };
-  return mapping[languageName];
-}  /// 构建操作按钮
-  Widget _buildActionButtons(BuildContext context, TranslationResult translation) {
+    await widget.ttsService!.stop();
+    setState(() {
+      _playingStates[language] = false;
+    });
+  }
+
+  /// 根据语言名称获取语言代码
+  String? _getLanguageCode(String languageName) {
+    // 将翻译用的语言名称映射到TTS语言代码
+    final mapping = {
+      'Chinese': 'zh-CN',
+      'English': 'en-US',
+      'Japanese': 'ja-JP',
+      'Korean': 'ko-KR',
+      'French': 'fr-FR',
+      'German': 'de-DE',
+      'Spanish': 'es-ES',
+      'Italian': 'it-IT',
+      'Russian': 'ru-RU',
+      'Arabic': 'ar-SA',
+      'Hindi': 'hi-IN',
+      'Greek': 'el-GR',
+    };
+    return mapping[languageName];
+  }
+
+  /// 构建操作按钮
+  Widget _buildActionButtons(
+    BuildContext context,
+    TranslationResult translation,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -213,10 +209,7 @@ String? _getLanguageCode(String languageName) {
               'Model: ${translation.config.selectedModel} | '
               'Provider: ${translation.config.provider} | '
               'Generated: ${_formatTimestamp(translation.timestamp)}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade700,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
           ),
         ],
@@ -225,7 +218,10 @@ String? _getLanguageCode(String languageName) {
   }
 
   /// 构建原文显示
-  Widget _buildOriginalText(BuildContext context, TranslationResult translation) {
+  Widget _buildOriginalText(
+    BuildContext context,
+    TranslationResult translation,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -258,9 +254,13 @@ String? _getLanguageCode(String languageName) {
   }
 
   /// 构建翻译结果列表
-  Widget _buildTranslations(BuildContext context, TranslationResult translation) {
+  Widget _buildTranslations(
+    BuildContext context,
+    TranslationResult translation,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
@@ -273,27 +273,28 @@ String? _getLanguageCode(String languageName) {
           ],
         ),
         const SizedBox(height: 8),
-        Expanded(
-          child: ListView.builder(
-            itemCount: translation.translations.length,
-            itemBuilder: (context, index) {
-              final language = translation.languages[index];
-              final translatedText = translation.translations[language] ?? '';
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildTranslationItem(context, language, translatedText),
-              );
-            },
-          ),
-        ),
+        // 直接使用 Column 列出所有翻译项
+        ...translation.translations.entries.map((entry) {
+          final language = entry.key;
+          final translatedText = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildTranslationItem(context, language, translatedText),
+          );
+        }).toList(),
       ],
     );
   }
 
   /// 构建单个翻译项
-  Widget _buildTranslationItem(BuildContext context, String language, String translatedText) {
+  Widget _buildTranslationItem(
+    BuildContext context,
+    String language,
+    String translatedText,
+  ) {
     final isPlaying = _playingStates[language] ?? false;
-    final hasTTS = widget.ttsService != null && _getLanguageCode(language) != null;
+    final hasTTS =
+        widget.ttsService != null && _getLanguageCode(language) != null;
 
     return Container(
       decoration: BoxDecoration(
@@ -333,7 +334,7 @@ String? _getLanguageCode(String languageName) {
                       color: isPlaying ? Colors.red : Colors.blue,
                     ),
                     tooltip: isPlaying ? 'Stop speaking' : 'Play with TTS',
-                    onPressed: isPlaying 
+                    onPressed: isPlaying
                         ? () => _stopTTS(language)
                         : () => _playTTS(language, translatedText),
                     padding: EdgeInsets.zero,
@@ -345,14 +346,15 @@ String? _getLanguageCode(String languageName) {
                 IconButton(
                   icon: const Icon(Icons.copy, size: 16),
                   tooltip: 'Copy translation',
-                  onPressed: () => _copyTranslation(context, language, translatedText),
+                  onPressed: () =>
+                      _copyTranslation(context, language, translatedText),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
               ],
             ),
           ),
-          
+
           // 翻译文本
           Padding(
             padding: const EdgeInsets.all(12),
@@ -367,7 +369,11 @@ String? _getLanguageCode(String languageName) {
   }
 
   /// 复制单个翻译
-  void _copyTranslation(BuildContext context, String language, String translatedText) {
+  void _copyTranslation(
+    BuildContext context,
+    String language,
+    String translatedText,
+  ) {
     Clipboard.setData(ClipboardData(text: translatedText));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -378,7 +384,10 @@ String? _getLanguageCode(String languageName) {
   }
 
   /// 复制所有翻译
-  void _copyAllTranslations(BuildContext context, TranslationResult translation) {
+  void _copyAllTranslations(
+    BuildContext context,
+    TranslationResult translation,
+  ) {
     final buffer = StringBuffer();
     buffer.writeln('Translation Results');
     buffer.writeln('=' * 50);
@@ -390,7 +399,7 @@ String? _getLanguageCode(String languageName) {
     buffer.writeln(translation.original);
     buffer.writeln();
     buffer.writeln('Translations:');
-    
+
     for (final language in translation.languages) {
       final translatedText = translation.translations[language] ?? '';
       buffer.writeln();
@@ -411,7 +420,7 @@ String? _getLanguageCode(String languageName) {
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     if (difference.inMinutes < 1) {
       return 'Just now';
     } else if (difference.inMinutes < 60) {
